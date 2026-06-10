@@ -93,8 +93,8 @@
 
     <!-- Bootstrap JS Bundle (BootCDN) -->
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <!-- ECharts 5 (BootCDN) -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <!-- ECharts 5 (local) -->
+    <script src="{{ url_for('static', filename='echarts.min.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
