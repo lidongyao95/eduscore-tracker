@@ -11,17 +11,76 @@
 <h2 class="mb-1">{{ teaching_class.name }}</h2>
 <p class="text-muted">{{ teaching_class.semester }} · {{ teaching_class.enrollments|length }} 名学生 · {{ units|length }} 个单元</p>
 
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">班级平均绝对增益</div>
+                <div class="fs-3 fw-bold">{{ summary.overall_avg_absolute_gain if summary.overall_avg_absolute_gain is not none else '-' }}<small class="fs-6">%</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">平均 Hake g</div>
+                <div class="fs-3 fw-bold">{{ summary.overall_avg_normalized_gain if summary.overall_avg_normalized_gain is not none else '-' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">教学单元数</div>
+                <div class="fs-3 fw-bold">{{ units|length }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% if summary.overall_avg_absolute_gain is not none %}
-<div class="alert alert-success">
-    班级平均绝对增益 <strong>{{ summary.overall_avg_absolute_gain }}%</strong>
-    · 平均 Hake g = <strong>{{ summary.overall_avg_normalized_gain }}</strong>
+<div class="alert alert-success d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        班级平均绝对增益 <strong>{{ summary.overall_avg_absolute_gain }}%</strong>
+        · 平均 Hake g = <strong>{{ summary.overall_avg_normalized_gain }}</strong>
+    </div>
+    <div class="small text-muted">这组指标可直接用于判断整体教学提升效果。</div>
+</div>
+{% endif %}
+
+{% if summary.unit_summaries %}
+<h4 class="mt-4 mb-3">班级增益汇总</h4>
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr><th>单元</th><th>有数据学生数</th><th>平均绝对增益</th><th>平均 Hake g</th></tr>
+        </thead>
+        <tbody>
+            {% for us in summary.unit_summaries %}
+            <tr>
+                <td>
+                    <div class="fw-medium">{{ us.unit.title }}</div>
+                    <div class="small text-muted">{{ us.unit.objectives|length }} 个学习目标</div>
+                </td>
+                <td>
+                    {{ us.student_count }} / {{ us.total_students }}
+                    {% if us.students_without_pre %}
+                    <div class="small text-warning">{{ us.students_without_pre }} 名学生缺少前测</div>
+                    {% endif %}
+                </td>
+                <td>{% if us.avg_absolute_gain is not none %}{{ us.avg_absolute_gain }}%{% else %}—{% endif %}</td>
+                <td>{% if us.avg_normalized_gain is not none %}{{ us.avg_normalized_gain }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endif %}
 
 <h4 class="mt-4 mb-3">教学单元</h4>
 {% for unit in units %}
 <div class="card mb-3 border-0 shadow-sm">
-    <div class="card-header bg-light d-flex justify-content-between">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span class="fw-bold">{{ unit.title }}</span>
         <span>
             {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
@@ -38,25 +97,4 @@
     </div>
 </div>
 {% endfor %}
-
-{% if summary.unit_summaries %}
-<h4 class="mt-4 mb-3">班级增益汇总</h4>
-<div class="table-responsive">
-    <table class="table table-hover">
-        <thead class="table-light">
-            <tr><th>单元</th><th>有数据学生数</th><th>平均绝对增益</th><th>平均 Hake g</th></tr>
-        </thead>
-        <tbody>
-            {% for us in summary.unit_summaries %}
-            <tr>
-                <td>{{ us.unit.title }}</td>
-                <td>{{ us.student_count }}</td>
-                <td>{% if us.avg_absolute_gain is not none %}{{ us.avg_absolute_gain }}%{% else %}—{% endif %}</td>
-                <td>{% if us.avg_normalized_gain is not none %}{{ us.avg_normalized_gain }}{% else %}—{% endif %}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
 {% endblock %}

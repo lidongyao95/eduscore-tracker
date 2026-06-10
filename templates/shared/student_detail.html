@@ -15,6 +15,10 @@
                 <h3 class="mb-1">{{ student.display_name }}</h3>
                 <div class="text-muted">@{{ student.username }}</div>
             </div>
+            <div class="text-end">
+                <div class="small text-muted">学情标签</div>
+                <span class="badge {% if risk_level and '预警' in risk_level %}bg-danger{% elif risk_level and '待提升' in risk_level %}bg-warning text-dark{% elif risk_level == '进步显著' %}bg-success{% else %}bg-secondary{% endif %}">{{ risk_level or '未知' }}</span>
+            </div>
             {% if current_user.role == 'teacher' %}
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.export_student', student_id=student.id) }}">
                 <i class="bi bi-download me-1"></i>导出成长数据
@@ -23,6 +27,71 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">平均测评得分率</div>
+                <div class="fs-3 fw-bold">{{ avg_assessment_rate if avg_assessment_rate is not none else '-' }}<small class="fs-6">%</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">前测平均</div>
+                <div class="fs-3 fw-bold">{{ avg_pre_rate if avg_pre_rate is not none else '-' }}<small class="fs-6">%</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">后测平均</div>
+                <div class="fs-3 fw-bold">{{ avg_post_rate if avg_post_rate is not none else '-' }}<small class="fs-6">%</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">单元平均增益</div>
+                <div class="fs-3 fw-bold">{{ avg_gain if avg_gain is not none else '-' }}<small class="fs-6">%</small></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recommendations %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="card-title mb-0"><i class="bi bi-lightbulb me-2"></i>教学建议</h5>
+    </div>
+    <div class="card-body">
+        <ul class="mb-0">
+            {% for item in recommendations %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+{% if weak_units %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="card-title mb-0"><i class="bi bi-exclamation-triangle me-2"></i>薄弱单元</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            {% for unit in weak_units %}
+            <span class="badge bg-light text-dark border">{{ unit.class_name }} / {{ unit.unit_title }}（{{ unit.post_rate }}%）</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
 
 {% if submissions %}
     <div class="card border-0 shadow-sm mb-4">
