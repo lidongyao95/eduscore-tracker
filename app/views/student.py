@@ -195,5 +195,12 @@ def growth():
         has_data=growth_data['has_data'],
         unit_reports=growth_data['unit_reports'],
         chart_items=growth_data['chart_items'],
+        avg_assessment_rate=growth_data.get('avg_assessment_rate'),
+        avg_pre_rate=growth_data.get('avg_pre_rate'),
+        avg_post_rate=growth_data.get('avg_post_rate'),
+        avg_gain=growth_data.get('avg_gain'),
+        risk_level=growth_data.get('risk_level'),
+        recommendations=growth_data.get('recommendations', []),
+        weak_units=growth_data.get('weak_units', []),
         back_url=url_for('student.dashboard'),
     )
