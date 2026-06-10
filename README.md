@@ -13,7 +13,6 @@
 - **数据导出** — 一键导出学生成绩 CSV
 - **零配置部署** — SQLite 数据库，一行命令启动，无需安装 MySQL/PostgreSQL
 - **AI 可复刻** — 内置 ARCHITECTURE.md 技术文档，可喂给任何 AI 助手独立重建系统
-- **架构可视化** — 根目录 `architecture-diagram.html` 可直接在浏览器打开查看系统架构图
 
 ## 技术栈
 
