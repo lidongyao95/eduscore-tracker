@@ -189,6 +189,7 @@ def build_student_growth_context(student_id, class_ids=None):
             report['class_name'] = tc.name
             report['chapter_number'] = chapter_number
             report['chapter_label'] = f'第{chapter_number}章'
+            report['unit_title'] = f'{chapter_number}. {unit.title}'
             unit_reports.append(report)
 
             item = _unit_chart_item(tc, unit, report, chapter_number,
@@ -216,7 +217,6 @@ def build_student_growth_context(student_id, class_ids=None):
     assessment_rates = []
     pre_rates = []
     post_rates = []
-    weak_units = []
 
     for unit_id, ass_dict in assessments_by_unit.items():
         for a_type, assessment in ass_dict.items():
@@ -253,26 +253,31 @@ def build_student_growth_context(student_id, class_ids=None):
                           if best and best.submitted_at else '',
         ))
 
-    unit_gains = [r.get('gain') for r in unit_reports if r.get('gain') is not None]
+    unit_gains = [r.get('absolute_gain') for r in unit_reports if r.get('absolute_gain') is not None]
     weak_units = sorted(
         [r for r in unit_reports if r.get('post_rate') is not None and r.get('post_rate') < 60],
-        key=lambda r: (r.get('post_rate') if r.get('post_rate') is not None else 101)
+        key=lambda r: r['post_rate']
     )[:5]
     avg_assessment_rate = round(sum(assessment_rates) / len(assessment_rates), 1) if assessment_rates else None
     avg_pre_rate = round(sum(pre_rates) / len(pre_rates), 1) if pre_rates else None
     avg_post_rate = round(sum(post_rates) / len(post_rates), 1) if post_rates else None
     avg_gain = round(sum(unit_gains) / len(unit_gains), 1) if unit_gains else None
-    risk_level = '正常'
+
+    # 风险等级：后测绝对值优先，但高增益也纳入考量
     if avg_post_rate is not None and avg_post_rate < 60:
-        risk_level = '预警'
+        risk_level = '预警（有进步）' if (avg_gain is not None and avg_gain >= 10) else '预警'
     elif avg_post_rate is not None and avg_post_rate < 75:
-        risk_level = '待提升'
+        risk_level = '待提升（有进步）' if (avg_gain is not None and avg_gain >= 10) else '待提升'
     elif avg_gain is not None and avg_gain >= 10:
         risk_level = '进步显著'
+    else:
+        risk_level = '正常'
+
     recommendations = []
     if weak_units:
         recommendations.append(f'优先复习 {weak_units[0]["unit_title"]} 对应单元')
-    if avg_pre_rate is not None and avg_post_rate is not None and avg_post_rate >= avg_pre_rate:
+    if (avg_pre_rate is not None and avg_post_rate is not None
+            and avg_post_rate >= avg_pre_rate and avg_post_rate >= 60):
         recommendations.append('继续保持当前教学节奏，并在后测后补充巩固练习')
     if not recommendations:
         recommendations.append('建议结合错题回顾与目标达成情况安排针对性练习')
@@ -284,8 +289,6 @@ def build_student_growth_context(student_id, class_ids=None):
         'chart_mode':    'unit',
         'has_data':      len(unified_payload) > 0,
         'submissions':   all_submissions,
-        'objective_mastery': [],
-        'weak_objectives': [],
         'trend_series': assessment_rates,
         'avg_assessment_rate': avg_assessment_rate,
         'avg_pre_rate': avg_pre_rate,

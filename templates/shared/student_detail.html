@@ -17,7 +17,7 @@
             </div>
             <div class="text-end">
                 <div class="small text-muted">学情标签</div>
-                <span class="badge {% if risk_level == '预警' %}bg-danger{% elif risk_level == '待提升' %}bg-warning text-dark{% elif risk_level == '进步显著' %}bg-success{% else %}bg-secondary{% endif %}">{{ risk_level or '未知' }}</span>
+                <span class="badge {% if risk_level and '预警' in risk_level %}bg-danger{% elif risk_level and '待提升' in risk_level %}bg-warning text-dark{% elif risk_level == '进步显著' %}bg-success{% else %}bg-secondary{% endif %}">{{ risk_level or '未知' }}</span>
             </div>
             {% if current_user.role == 'teacher' %}
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.export_student', student_id=student.id) }}">

@@ -38,7 +38,9 @@ def dashboard():
 
     pre_count = Assessment.query.filter_by(teacher_id=current_user.id, type='pre_test').count()
     post_count = Assessment.query.filter_by(teacher_id=current_user.id, type='post_test').count()
-    class_count = TeachingClass.query.filter_by(teacher_id=current_user.id).count()
+
+    teaching_classes = TeachingClass.query.filter_by(teacher_id=current_user.id)\
+        .order_by(TeachingClass.created_at.desc()).all()
 
     return render_template('admin/dashboard.html',
                           student_count=student_count,
@@ -47,7 +49,7 @@ def dashboard():
                           pending_count=pending_count,
                           pre_count=pre_count,
                           post_count=post_count,
-                          class_count=class_count)
+                          teaching_classes=teaching_classes)
 
 
 @admin_bp.route('/classes')
