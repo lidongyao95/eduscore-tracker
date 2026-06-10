@@ -55,8 +55,10 @@ def create_app():
 def main():
     app = create_app()
     port = app.config['PORT']
-    print(f' * Running on http://127.0.0.1:{port}')
-    app.run(debug=True, host='0.0.0.0', port=port)
+    debug = app.config.get('DEBUG', False)
+    host = app.config.get('HOST', '127.0.0.1')
+    print(f' * Running on http://{host}:{port}')
+    app.run(debug=debug, host=host, port=port)
 
 
 if __name__ == '__main__':

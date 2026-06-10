@@ -115,7 +115,7 @@ class TestGrowthPage:
         self, app, client, student_id, assessment_id, post_test_assessment_id, question_id
     ):
         """Growth page renders pre_test assessments before post_test"""
-        from datetime import datetime
+        from datetime import datetime, timezone
         with app.app_context():
             for aid in (post_test_assessment_id, assessment_id):
                 sub = Submission(
@@ -123,7 +123,7 @@ class TestGrowthPage:
                     assessment_id=aid,
                     attempt_number=1,
                     answers={str(question_id): 'A'},
-                    submitted_at=datetime.utcnow(),
+                    submitted_at=datetime.now(timezone.utc),
                 )
                 db.session.add(sub)
             db.session.commit()

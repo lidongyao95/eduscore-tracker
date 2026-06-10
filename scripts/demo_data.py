@@ -9,7 +9,7 @@ Unit 5: post-test only (no pre-test).
 import os
 import random
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -293,7 +293,7 @@ def _generate_answers(questions, target_ratio, seed):
 def seed():
     app = create_app()
     with app.app_context():
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         teacher = User(username='teacher', display_name='张老师', role='teacher')
         teacher.set_password('teacher123')

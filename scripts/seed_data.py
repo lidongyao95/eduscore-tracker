@@ -1,7 +1,7 @@
 """Seed helpers for formal and demo startup modes."""
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -83,7 +83,7 @@ def seed():
             db.session.flush()
             created.append('question')
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for atype, title, counts in [('pre_test', '学期初摸底测试', False), ('post_test', '学期末综合测试', True)]:
             a = Assessment.query.filter_by(unit_id=unit.id, type=atype).first()
             if a is None:

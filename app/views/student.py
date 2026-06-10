@@ -123,7 +123,7 @@ def take_assessment(assessment_id):
             answers=answers,
         )
         db.session.add(submission)
-        db.session.commit()
+        db.session.flush()  # resolve relationships before grade()
         submission.grade()
         db.session.commit()
         cache.delete_memoized(build_student_growth_context)

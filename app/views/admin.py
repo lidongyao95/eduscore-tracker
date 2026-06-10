@@ -105,7 +105,7 @@ def create_question():
             title=form.title.data,
             content=form.content.data,
             type=form.type.data,
-            options=json.dumps(options, ensure_ascii=False) if options else None,
+            options=options if options else None,
             correct_answer=form.correct_answer.data,
             score=form.score.data,
             teacher_id=current_user.id,
@@ -133,7 +133,7 @@ def edit_question(question_id):
         options = None
         if form.options.data:
             options = [line.strip() for line in form.options.data.strip().split('\n') if line.strip()]
-        question.options = json.dumps(options, ensure_ascii=False) if options else None
+        question.options = options if options else None
         question.correct_answer = form.correct_answer.data
         question.score = form.score.data
         question.objective_id = form.objective_id.data or None
@@ -313,7 +313,10 @@ def edit_assessment(assessment_id):
         assessment.end_time = form.end_time.data
         assessment.questions = [int(q) for q in selected_questions] if selected_questions else None
         assessment.max_attempts = form.max_attempts.data
-        assessment.counts_toward_grade = form.counts_toward_grade.data
+        if form.type.data == 'pre_test':
+            assessment.counts_toward_grade = False
+        else:
+            assessment.counts_toward_grade = form.counts_toward_grade.data
         db.session.commit()
         cache.delete_memoized(class_gain_summary)
         cache.delete_memoized(build_student_growth_context)
@@ -384,6 +387,9 @@ def grade_submission(submission_id):
         answers = {}
 
     if request.method == 'POST':
+        # Re-grade from scratch to get auto-score baseline,
+        # then add manual short_answer scores on top.
+        submission.grade()
         additional_score = 0
         for q in questions:
             score_val = request.form.get(f'score_{q.id}', 0, type=int)

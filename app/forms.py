@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, SelectField, IntegerField, DateTimeLocalField, BooleanField
-from wtforms.validators import DataRequired, Optional, NumberRange
+from wtforms.validators import DataRequired, Optional, NumberRange, Length, ValidationError
 
 
 class LoginForm(FlaskForm):
@@ -11,7 +11,10 @@ class LoginForm(FlaskForm):
 class RegisterForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired(message='请输入用户名')])
     display_name = StringField('姓名', validators=[DataRequired(message='请输入姓名')])
-    password = PasswordField('密码', validators=[DataRequired(message='请输入密码')])
+    password = PasswordField('密码', validators=[
+        DataRequired(message='请输入密码'),
+        Length(min=6, message='密码至少6位'),
+    ])
     confirm_password = PasswordField('确认密码', validators=[DataRequired(message='请再次输入密码')])
 
 
@@ -60,11 +63,18 @@ class AssessmentForm(FlaskForm):
     max_attempts = IntegerField('最大提交次数 (0=无限)', validators=[NumberRange(min=0)], default=0)
     counts_toward_grade = BooleanField('计入成绩')
 
+    def validate_end_time(self, field):
+        if self.start_time.data and field.data and field.data <= self.start_time.data:
+            raise ValidationError('截止时间必须晚于开始时间')
+
 
 class StudentCreateForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired()])
     display_name = StringField('姓名', validators=[DataRequired()])
-    password = PasswordField('密码', validators=[DataRequired()])
+    password = PasswordField('密码', validators=[
+        DataRequired(),
+        Length(min=6, message='密码至少6位'),
+    ])
 
 
 class GradingForm(FlaskForm):
