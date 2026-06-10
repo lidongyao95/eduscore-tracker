@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from functools import wraps
 from ..models import db, User, Question, Assessment, Submission, TeachingClass, TeachingUnit, ClassEnrollment, LearningObjective
-from ..forms import QuestionForm, AssessmentForm, StudentCreateForm, TeachingClassForm
+from ..forms import QuestionForm, AssessmentForm, StudentCreateForm
 from ..services.gain import class_gain_summary
 from ..services.growth import build_student_growth_context
 from ..extensions import cache
@@ -220,6 +220,13 @@ def student_detail(student_id):
         has_data=growth['has_data'],
         unit_reports=growth['unit_reports'],
         chart_items=growth['chart_items'],
+        avg_assessment_rate=growth.get('avg_assessment_rate'),
+        avg_pre_rate=growth.get('avg_pre_rate'),
+        avg_post_rate=growth.get('avg_post_rate'),
+        avg_gain=growth.get('avg_gain'),
+        risk_level=growth.get('risk_level'),
+        recommendations=growth.get('recommendations', []),
+        weak_units=growth.get('weak_units', []),
         back_url=url_for('admin.students'),
     )
 

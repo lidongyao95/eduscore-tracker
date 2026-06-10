@@ -3,10 +3,20 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2 me-2"></i>教师管理后台</h2>
+    <div>
+        <h2 class="mb-1"><i class="bi bi-speedometer2 me-2"></i>教师管理后台</h2>
+        <p class="text-muted mb-0">从这里快速查看教学运营、学情趋势和待处理事项。</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.create_assessment') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>新建测评
+        </a>
+        <a href="{{ url_for('admin.create_question') }}" class="btn btn-outline-primary">
+            <i class="bi bi-question-circle me-1"></i>新建题目
+        </a>
+    </div>
 </div>
 
-<!-- 统计卡片 -->
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-lg-3">
         <div class="card border-0 shadow-sm h-100">
@@ -62,7 +72,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="text-muted small">提交总数</div>
+                    <div class="text-muted small">待处理提交</div>
                     <div class="fs-3 fw-bold">{{ pending_count }}</div>
                 </div>
             </div>
@@ -70,7 +80,63 @@
     </div>
 </div>
 
-<!-- ECharts 饼图 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0"><i class="bi bi-bullseye me-2"></i>教学待办</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>前测</span><span class="badge bg-primary rounded-pill">{{ pre_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>后测</span><span class="badge bg-success rounded-pill">{{ post_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>教学班</span><span class="badge bg-dark rounded-pill">{{ class_count }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0"><i class="bi bi-lightning-charge me-2"></i>快捷操作</h5>
+            </div>
+            <div class="card-body d-flex flex-column gap-3">
+                <a href="{{ url_for('admin.questions') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-question-circle me-2"></i>管理题目
+                </a>
+                <a href="{{ url_for('admin.students') }}" class="btn btn-outline-success">
+                    <i class="bi bi-people me-2"></i>管理学生
+                </a>
+                <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-dark">
+                    <i class="bi bi-building me-2"></i>教学班
+                </a>
+                <a href="{{ url_for('admin.assessments') }}" class="btn btn-outline-info">
+                    <i class="bi bi-clipboard-check me-2"></i>管理测评
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0"><i class="bi bi-graph-up-arrow me-2"></i>学情说明</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">系统已具备按单元与测评汇总的成长数据，后续会继续补充掌握率、风险预警和教学建议。</p>
+                <div class="alert alert-light border mb-0 small">
+                    建议优先关注：待批改主观题、低掌握单元、后测未提升学生。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-3 mb-4">
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm">
@@ -85,20 +151,17 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-bottom">
-                <h5 class="card-title mb-0"><i class="bi bi-lightning-charge me-2"></i>快捷操作</h5>
+                <h5 class="card-title mb-0"><i class="bi bi-clipboard-data me-2"></i>学情分析入口</h5>
             </div>
             <div class="card-body d-flex flex-column justify-content-center gap-3">
-                <a href="{{ url_for('admin.questions') }}" class="btn btn-outline-primary btn-lg">
-                    <i class="bi bi-question-circle me-2"></i>管理题目
+                <a href="{{ url_for('admin.students') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-person-badge me-2"></i>按学生看成长
                 </a>
-                <a href="{{ url_for('admin.students') }}" class="btn btn-outline-success btn-lg">
-                    <i class="bi bi-people me-2"></i>管理学生
-                </a>
-                <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-dark btn-lg">
-                    <i class="bi bi-building me-2"></i>教学班 ({{ class_count }})
+                <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-diagram-3 me-2"></i>按班级看增益
                 </a>
                 <a href="{{ url_for('admin.assessments') }}" class="btn btn-outline-info btn-lg">
-                    <i class="bi bi-clipboard-check me-2"></i>管理测评
+                    <i class="bi bi-journal-check me-2"></i>按测评看结果
                 </a>
             </div>
         </div>
