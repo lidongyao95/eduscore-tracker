@@ -408,12 +408,26 @@ build_student_growth_context(student_id, class_ids)
 
     返回统一 schema：
     {
-        unit_reports:   [{unit, pre_rate, post_rate, absolute_gain, normalized_gain, ...}],
+        unit_reports:   [{unit, pre_rate, post_rate, absolute_gain, normalized_gain,
+                          class_name, chapter_number, chapter_label, unit_title, ...}],
         chart_items:    [{group_type, group_id, pre_rate, post_rate, display_label, ...}],
         chart_payload:  [{group_type, group_id, type, pct, ...}, ...],  // 统一格式，前端 filter
         submissions:    [Submission, ...],   // joinedload(Submission.assessment) 预载
-        has_data:       bool
+        has_data:       bool,
+        // 学情分析字段（2026-06 新增）
+        avg_assessment_rate: float | None,   // 所有测评平均得分率
+        avg_pre_rate:        float | None,   // 前测平均得分率
+        avg_post_rate:       float | None,   // 后测平均得分率
+        avg_gain:            float | None,   // 单元平均绝对增益
+        risk_level:          str,            // 风险等级：预警/预警（有进步）/待提升/待提升（有进步）/进步显著/正常
+        recommendations:     [str],          // 个性化教学建议列表
+        weak_units:          [dict],         // 薄弱单元（post_rate < 60，最多5个，按得分率升序）
+        trend_series:        [float],        // 所有测评得分率序列
     }
+
+weak_units 每个元素包含：unit, class_name, chapter_number, chapter_label, unit_title, pre_rate, post_rate
+risk_level 判定逻辑：后测绝对值优先（<60 预警，<75 待提升），同时考虑增益（≥10 标注"有进步"）
+recommendations 生成规则：有薄弱单元时建议优先复习；后测≥前测且≥60 时鼓励保持节奏
 
 chart_payload 中每条记录有 group_type 字段：
   - 'unit': 按教学单元分组（前测/后测百分比）
@@ -461,9 +475,9 @@ base.html (Bootstrap 5 + ECharts CDN, 导航栏, flash消息)
 │   └── result.html                 — 得分摘要 + 逐题反馈
 ├── shared/
 │   ├── _growth_chart.html          — ECharts 图表 JS（include 引入）
-│   └── student_detail.html         — 学生详情 + 成长轨迹图表 + 提交记录（教师 & 学生共用，通过 back_url 区分返回链接）
+│   └── student_detail.html         — 学生详情 + 学情标签 + 得分率卡片 + 教学建议 + 薄弱单元 + 成长轨迹图表 + 提交记录（教师 & 学生共用）
 └── admin/
-    ├── dashboard.html               — 统计卡片
+    ├── dashboard.html               — 统计卡片 + 教学班概览 + 测评分布饼图 + 快捷导航
     ├── classes.html                 — 教学班卡片网格
     ├── class_detail.html            — 班级详情 + 增益汇总表
     ├── questions.html               — 题库表格 + 分页
