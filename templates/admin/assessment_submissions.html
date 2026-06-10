@@ -1,0 +1,89 @@
+{% extends "base.html" %}{% set now = none %}
+{% block title %}{{ assessment.title }} - 提交记录 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('admin.assessments') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>返回测评列表
+    </a>
+</div>
+
+<!-- 测评信息头部 -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col">
+                <h3 class="mb-1">{{ assessment.title }}</h3>
+                <p class="text-muted mb-0">
+                    <span class="badge {% if assessment.type == 'pre_test' %}bg-primary{% else %}bg-success{% endif %} me-2">
+                        {{ '前测' if assessment.type == 'pre_test' else '后测' }}
+                    </span>
+                    <span class="me-2"><i class="bi bi-question-circle me-1"></i>{{ (assessment.questions or [])|length }} 题</span>
+                    <span class="me-2"><i class="bi bi-list-check me-1"></i>{{ submissions|length }} 条提交</span>
+                    {% if assessment.is_published %}
+                    <span class="badge bg-primary"><i class="bi bi-check-circle me-1"></i>已发布</span>
+                    {% else %}
+                    <span class="badge bg-secondary"><i class="bi bi-pencil me-1"></i>草稿</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('admin.export_assessment', assessment_id=assessment.id) }}" class="btn btn-success">
+                    <i class="bi bi-download me-1"></i>导出CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if submissions %}
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>学生姓名</th>
+                    <th>用户名</th>
+                    <th>提交次数</th>
+                    <th>得分</th>
+                    <th>提交时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in submissions %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ s.student.display_name }}</td>
+                    <td><code>{{ s.student.username }}</code></td>
+                    <td>第 {{ s.attempt_number }} 次</td>
+                    <td>
+                        <span class="fw-bold">{{ s.score }}</span>
+                        <span class="text-muted">/ {{ s.total_score }}</span>
+                        {% if s.total_score > 0 %}
+                        <div class="progress mt-1" style="height: 6px; max-width: 80px;">
+                            <div class="progress-bar {% if (s.score / s.total_score * 100) >= 60 %}bg-success{% else %}bg-warning{% endif %}" 
+                                 style="width: {{ (s.score / s.total_score * 100)|round|int }}%;"></div>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td><small class="text-muted">{{ s.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if s.submitted_at else '' }}</small></td>
+                    <td>
+                        <a href="{{ url_for('admin.grade_submission', submission_id=s.id) }}" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-check2-square me-1"></i>批改
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox fs-1 text-muted"></i>
+    <p class="text-muted mt-3">还没有学生提交此测评</p>
+</div>
+{% endif %}
+{% endblock %}

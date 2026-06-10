@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}提交结果 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>返回测评列表
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- 得分总览 -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header 
+                {% if assessment.type == 'pre_test' %}bg-primary text-white{% else %}bg-success text-white{% endif %}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ assessment.title }}</h5>
+                    <span class="badge bg-light 
+                        {% if assessment.type == 'pre_test' %}text-primary{% else %}text-success{% endif %}">
+                        {% if assessment.type == 'pre_test' %}前测{% else %}后测{% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h6 class="text-muted">第 {{ submission.attempt_number }} 次提交</h6>
+                    <h3 class="mb-1">
+                        得分: <span class="text-primary">{{ submission.score }}</span> / {{ submission.total_score }}
+                    </h3>
+                    {% set pct = (submission.score / submission.total_score * 100)|round(1) if submission.total_score > 0 else 0 %}
+                    <div class="progress mt-2" style="height: 24px;">
+                        <div class="progress-bar 
+                            {% if pct >= 80 %}bg-success
+                            {% elif pct >= 60 %}bg-warning text-dark
+                            {% else %}bg-danger
+                            {% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ pct }}%;" 
+                            aria-valuenow="{{ pct }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                            {{ pct }}%
+                        </div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        提交时间: {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if submission.submitted_at else '-' }}
+                    </small>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="d-flex gap-2 justify-content-center">
+                    {% if can_retry %}
+                    <a href="{{ url_for('student.take_assessment', assessment_id=assessment.id) }}" class="btn btn-warning">
+                        <i class="bi bi-arrow-repeat me-1"></i>再次作答
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('student.assessment_detail', assessment_id=assessment.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-ul me-1"></i>查看提交记录
+                    </a>
+                    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house me-1"></i>返回测评列表
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 逐题结果 -->
+        <h5 class="mb-3"><i class="bi bi-list-check me-2"></i>答题详情</h5>
+        
+        {% for result in question_results %}
+        <div class="card mb-3 shadow-sm 
+            {% if result.is_correct == True %}border-success
+            {% elif result.is_correct == False %}border-danger
+            {% else %}border-warning
+            {% endif %}">
+            <div class="card-header d-flex justify-content-between align-items-center
+                {% if result.is_correct == True %}bg-success bg-opacity-10
+                {% elif result.is_correct == False %}bg-danger bg-opacity-10
+                {% else %}bg-warning bg-opacity-10
+                {% endif %}">
+                <span class="fw-bold">第 {{ loop.index }} 题</span>
+                <div>
+                    <span class="badge 
+                        {% if result.question.type == 'single_choice' %}bg-info
+                        {% elif result.question.type == 'multi_choice' %}bg-warning text-dark
+                        {% else %}bg-secondary
+                        {% endif %} me-1">
+                        {% if result.question.type == 'single_choice' %}单选题
+                        {% elif result.question.type == 'multi_choice' %}多选题
+                        {% else %}简答题
+                        {% endif %}
+                    </span>
+                    <span class="badge 
+                        {% if result.is_correct == True %}bg-success
+                        {% elif result.is_correct == False %}bg-danger
+                        {% else %}bg-warning text-dark
+                        {% endif %}">
+                        {% if result.is_correct == True %}&#10003; 正确 +{{ result.score_got }}分
+                        {% elif result.is_correct == False %}&#10007; 错误 0分
+                        {% else %}待批改 0分
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 题目内容 -->
+                <div class="mb-3">
+                    {% if result.question.title %}
+                    <h6>{{ result.question.title }}</h6>
+                    {% endif %}
+                    <p class="mb-0">{{ result.question.content }}</p>
+                </div>
+
+                <!-- 选项（如果有） -->
+                {% if result.question.options %}
+                <div class="mb-3 ms-3">
+                    <small class="text-muted d-block mb-1">选项:</small>
+                    {% for opt in result.question.options %}
+                    <div class="mb-1">{{ opt }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- 学生答案 -->
+                <div class="mb-2">
+                    <strong>你的答案:</strong>
+                    <span class="ms-2">
+                        {% if result.student_answer %}
+                            {% if result.question.type in ('single_choice', 'multi_choice') %}
+                                {{ result.student_answer }}
+                            {% else %}
+                                {{ result.student_answer }}
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted fst-italic">未作答</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- 正确答案（客观题显示，简答题不显示） -->
+                {% if result.question.type != 'short_answer' and result.question.correct_answer %}
+                <div class="mb-2">
+                    <strong>正确答案:</strong>
+                    <span class="ms-2 text-success fw-bold">{{ result.question.correct_answer }}</span>
+                </div>
+                {% endif %}
+
+                <!-- 简答题提示 -->
+                {% if result.question.type == 'short_answer' %}
+                <div class="alert alert-warning py-1 px-2 mb-0 small">
+                    <i class="bi bi-hourglass-split me-1"></i>简答题需要老师手动批改，请耐心等待
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- 底部操作 -->
+        <div class="d-flex gap-2 justify-content-center mt-4">
+            {% if can_retry %}
+            <a href="{{ url_for('student.take_assessment', assessment_id=assessment.id) }}" class="btn btn-warning">
+                <i class="bi bi-arrow-repeat me-1"></i>再次作答
+            </a>
+            {% endif %}
+            <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-house me-1"></i>返回测评列表
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

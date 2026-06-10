@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}学习中心 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="bi bi-mortarboard me-2"></i>学习中心</h2>
+        <p class="text-muted">欢迎回来，{{ current_user.display_name }}！按教学单元查看前测/后测</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('student.growth') }}" class="btn btn-outline-success">
+            <i class="bi bi-graph-up me-1"></i>成长轨迹
+        </a>
+    </div>
+</div>
+
+{% if class_data %}
+{% for cd in class_data %}
+<div class="mb-4">
+    <h4 class="mb-1">{{ cd.teaching_class.name }}</h4>
+    <p class="text-muted small mb-3">{{ cd.teaching_class.semester }}</p>
+
+    {% for ud in cd.units %}
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-book me-2"></i>{{ ud.unit.title }}</span>
+            {% if ud.gain.absolute_gain is not none %}
+            <span class="badge bg-success">增益 {{ ud.gain.absolute_gain }}%</span>
+            {% elif not ud.gain.has_pre %}
+            <span class="badge bg-secondary">无前测</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for item in ud.assessments %}
+                <div class="col-md-6">
+                    <div class="card h-100 {% if item.assessment.type == 'pre_test' %}border-primary{% else %}border-success{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-medium">{{ item.assessment.title }}</span>
+                                <span class="badge {% if item.assessment.type == 'pre_test' %}bg-primary{% else %}bg-success{% endif %}">
+                                    {% if item.assessment.type == 'pre_test' %}前测{% else %}后测{% endif %}
+                                </span>
+                            </div>
+                            <p class="small text-muted mb-2">
+                                {% if item.assessment.counts_toward_grade %}计入成绩{% else %}诊断摸底，不计分{% endif %}
+                                · {{ item.attempt_count }}/{{ item.assessment.max_attempts if item.assessment.max_attempts > 0 else '∞' }} 次
+                            </p>
+                            {% if item.latest_submission %}
+                            <p class="small mb-2">最佳: {{ item.latest_submission.score }}/{{ item.latest_submission.total_score }}</p>
+                            {% endif %}
+                            {% if item.can_submit %}
+                            <a href="{{ url_for('student.take_assessment', assessment_id=item.assessment.id) }}" class="btn btn-sm btn-primary">
+                                {% if item.attempt_count > 0 %}继续作答{% else %}开始测评{% endif %}
+                            </a>
+                            {% elif item.latest_submission %}
+                            <a href="{{ url_for('student.submission_result', submission_id=item.latest_submission.id) }}" class="btn btn-sm btn-outline-primary">查看结果</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-clipboard" style="font-size: 4rem; color: #dee2e6;"></i>
+    <h5 class="mt-3 text-muted">暂未加入任何教学班</h5>
+    <p class="text-muted">请联系老师将你加入课程</p>
+</div>
+{% endif %}
+{% endblock %}

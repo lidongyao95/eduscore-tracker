@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}测评管理 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-clipboard-check me-2"></i>测评管理</h2>
+    <a href="{{ url_for('admin.create_assessment') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>新建测评
+    </a>
+</div>
+
+{% if assessments %}
+<div class="row g-3">
+    {% for a in assessments %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">{{ a.title }}</h6>
+                    <span class="badge {% if a.type == 'pre_test' %}bg-primary{% else %}bg-success{% endif %}">
+                        {{ '前测' if a.type == 'pre_test' else '后测' }}
+                    </span>
+                </div>
+                {% if a.unit %}
+                <p class="small text-muted mb-1"><i class="bi bi-book me-1"></i>{{ a.unit.title }}</p>
+                {% endif %}
+                {% if a.description %}
+                <p class="text-muted small mb-2">{{ a.description[:80] }}{% if a.description|length > 80 %}...{% endif %}</p>
+                {% endif %}
+
+                {% set now = None %}
+                {% if a.end_time and now is none %}
+                    {% set now = a.end_time %}
+                {% endif %}
+                <div class="mb-2">
+                    {% if a.is_published %}
+                        {% if a.end_time and a.end_time < a.start_time %}
+                        <span class="badge bg-danger"><i class="bi bi-clock-history me-1"></i>已截止</span>
+                        {% elif a.end_time and a.end_time < now %}
+                        <span class="badge bg-danger"><i class="bi bi-clock-history me-1"></i>已截止</span>
+                        {% else %}
+                        <span class="badge bg-primary"><i class="bi bi-check-circle me-1"></i>已发布</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="badge bg-secondary"><i class="bi bi-pencil me-1"></i>草稿</span>
+                    {% endif %}
+                </div>
+
+                <div class="small text-muted mb-3">
+                    <div><i class="bi bi-question-circle me-1"></i>{{ (a.questions or [])|length }} 题</div>
+                    <div><i class="bi bi-arrow-repeat me-1"></i>最大次数: {{ a.max_attempts if a.max_attempts > 0 else '无限' }}</div>
+                    {% if a.start_time and a.end_time %}
+                    <div><i class="bi bi-calendar me-1"></i>{{ a.start_time.strftime('%m-%d %H:%M') }} ~ {{ a.end_time.strftime('%m-%d %H:%M') }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex flex-wrap gap-1">
+                    <form method="POST" action="{{ url_for('admin.toggle_publish', assessment_id=a.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm {% if a.is_published %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}">
+                            {% if a.is_published %}
+                            <i class="bi bi-eye-slash me-1"></i>取消发布
+                            {% else %}
+                            <i class="bi bi-eye me-1"></i>发布
+                            {% endif %}
+                        </button>
+                    </form>
+                    <a href="{{ url_for('admin.edit_assessment', assessment_id=a.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>编辑
+                    </a>
+                    <a href="{{ url_for('admin.assessment_submissions', assessment_id=a.id) }}" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-list-ul me-1"></i>提交
+                    </a>
+                    <a href="{{ url_for('admin.export_assessment', assessment_id=a.id) }}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-download me-1"></i>导出
+                    </a>
+                    <form method="POST" action="{{ url_for('admin.delete_assessment', assessment_id=a.id) }}" style="display:inline;" onsubmit="return confirm('确定要删除测评「{{ a.title }}」吗？所有提交记录也将被删除。');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash me-1"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-clipboard-check fs-1 text-muted"></i>
+    <p class="text-muted mt-3">还没有创建任何测评</p>
+    <a href="{{ url_for('admin.create_assessment') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>创建第一个测评
+    </a>
+</div>
+{% endif %}
+{% endblock %}

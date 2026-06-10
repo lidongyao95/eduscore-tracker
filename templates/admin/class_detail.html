@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ teaching_class.name }} - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>返回教学班列表
+    </a>
+</div>
+
+<h2 class="mb-1">{{ teaching_class.name }}</h2>
+<p class="text-muted">{{ teaching_class.semester }} · {{ teaching_class.enrollments|length }} 名学生 · {{ units|length }} 个单元</p>
+
+{% if summary.overall_avg_absolute_gain is not none %}
+<div class="alert alert-success">
+    班级平均绝对增益 <strong>{{ summary.overall_avg_absolute_gain }}%</strong>
+    · 平均 Hake g = <strong>{{ summary.overall_avg_normalized_gain }}</strong>
+</div>
+{% endif %}
+
+<h4 class="mt-4 mb-3">教学单元</h4>
+{% for unit in units %}
+<div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between">
+        <span class="fw-bold">{{ unit.title }}</span>
+        <span>
+            {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
+            {% if unit.get_post_assessment() %}<span class="badge bg-success">有后测</span>{% endif %}
+        </span>
+    </div>
+    <div class="card-body">
+        <p class="small text-muted mb-2">{{ unit.objectives|length }} 个学习目标</p>
+        <ul class="small mb-0">
+            {% for obj in unit.objectives %}
+            <li>{{ obj.title }} ({{ obj.questions|length }} 题)</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endfor %}
+
+{% if summary.unit_summaries %}
+<h4 class="mt-4 mb-3">班级增益汇总</h4>
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr><th>单元</th><th>有数据学生数</th><th>平均绝对增益</th><th>平均 Hake g</th></tr>
+        </thead>
+        <tbody>
+            {% for us in summary.unit_summaries %}
+            <tr>
+                <td>{{ us.unit.title }}</td>
+                <td>{{ us.student_count }}</td>
+                <td>{% if us.avg_absolute_gain is not none %}{{ us.avg_absolute_gain }}%{% else %}—{% endif %}</td>
+                <td>{% if us.avg_normalized_gain is not none %}{{ us.avg_normalized_gain }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% if chart_payload %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var chartDom = document.getElementById('{{ chart_dom_id }}');
+    if (!chartDom || !window.echarts) return;
+
+    var data = {{ chart_payload | tojson | safe }};
+    var mode = {{ chart_mode | tojson | safe }};
+    var chart = echarts.init(chartDom);
+    var modeSelect = document.getElementById('growthGroupMode');
+
+    function buildAssessmentGroups() {
+        var groupedMap = {};
+        data.forEach(function (s) {
+            if (s.group_type !== 'assessment') return;
+            var key = s.group_id;
+            if (!key) return;
+            if (!groupedMap[key]) {
+                groupedMap[key] = { id: key, label: s.group_label, typeOrder: s.type_order || 0, pre: null, post: null };
+            }
+            if (s.type === 'pre_test' && s.pct !== null) groupedMap[key].pre = s.pct;
+            if (s.type === 'post_test' && s.pct !== null) groupedMap[key].post = s.pct;
+            if (s.type_order !== undefined && s.type_order !== null) groupedMap[key].typeOrder = s.type_order;
+        });
+        return Object.keys(groupedMap).map(function (key) { return groupedMap[key]; });
+    }
+
+    function buildUnitGroups() {
+        var groups = [];
+        var map = {};
+        data.forEach(function (s) {
+            if (s.group_type !== 'unit') return;
+            var key = s.group_id;
+            if (!key) return;
+            if (!map[key]) {
+                map[key] = { id: key, label: s.group_label, order: s.group_order || 0, pre: null, post: null };
+                groups.push(map[key]);
+            }
+            if (s.type === 'pre_test' && s.pct !== null) map[key].pre = s.pct;
+            if (s.type === 'post_test' && s.pct !== null) map[key].post = s.pct;
+            if (s.group_order !== undefined && s.group_order !== null) map[key].order = s.group_order;
+        });
+        groups.sort(function (a, b) { return a.order - b.order || a.label.localeCompare(b.label, 'zh-Hans-CN'); });
+        return groups;
+    }
+
+    function renderAssessmentGrowth() {
+        var groups = buildAssessmentGroups();
+        groups.sort(function (a, b) { return a.typeOrder - b.typeOrder || a.label.localeCompare(b.label, 'zh-Hans-CN'); });
+        var labels = groups.map(function (a) { return a.label; });
+        var preData = groups.map(function (a) { return a.pre; });
+        var postData = groups.map(function (a) { return a.post; });
+        return {
+            backgroundColor: '#fff',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            legend: { top: 6, data: ['前测', '后测'] },
+            grid: { left: 60, right: 24, top: 56, bottom: 52, containLabel: true },
+            toolbox: { right: 12, feature: { saveAsImage: { title: '导出图片' }, restore: { title: '还原' } } },
+            xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 18, width: 120, overflow: 'truncate' } },
+            yAxis: { type: 'value', name: '得分率 (%)', min: 0, max: 100 },
+            series: [
+                { name: '前测', type: 'bar', barWidth: 22, data: preData, itemStyle: { color: '#0d6efd' } },
+                { name: '后测', type: 'bar', barWidth: 22, data: postData, itemStyle: { color: '#198754' } }
+            ]
+        };
+    }
+
+    function renderUnitGrowth() {
+        var groups = buildUnitGroups();
+        var labels = groups.map(function (u) { return u.label; });
+        var preData = groups.map(function (u) { return u.pre; });
+        var postData = groups.map(function (u) { return u.post; });
+        var gainData = groups.map(function (u) { return (u.pre !== null && u.post !== null) ? +(u.post - u.pre).toFixed(1) : null; });
+        return {
+            backgroundColor: '#fff',
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            legend: { top: 6, data: ['前测', '后测', '增益'] },
+            grid: { left: 60, right: 24, top: 56, bottom: 52, containLabel: true },
+            toolbox: { right: 12, feature: { saveAsImage: { title: '导出图片' }, restore: { title: '还原' } } },
+            xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 18, width: 120, overflow: 'truncate' } },
+            yAxis: [{ type: 'value', name: '得分率 (%)', min: 0, max: 100 }, { type: 'value', name: '增益 (%)', min: -100, max: 100 }],
+            series: [
+                { name: '前测', type: 'bar', barWidth: 18, data: preData, itemStyle: { color: '#0d6efd' } },
+                { name: '后测', type: 'bar', barWidth: 18, data: postData, itemStyle: { color: '#198754' } },
+                { name: '增益', type: 'line', yAxisIndex: 1, smooth: true, connectNulls: true, data: gainData, lineStyle: { color: '#fd7e14', width: 3 }, itemStyle: { color: '#fd7e14' } }
+            ]
+        };
+    }
+
+    function render() {
+        var currentMode = modeSelect ? modeSelect.value : mode;
+        var option = currentMode === 'unit' ? renderUnitGrowth() : renderAssessmentGrowth();
+        chart.setOption(option, true);
+    }
+
+    if (modeSelect) {
+        modeSelect.addEventListener('change', render);
+    }
+
+    render();
+    window.addEventListener('resize', function () { chart.resize(); });
+});
+</script>
+{% endif %}

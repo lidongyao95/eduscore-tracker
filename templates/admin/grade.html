@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}批改提交 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('admin.assessment_submissions', assessment_id=submission.assessment_id) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>返回提交列表
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-check2-square me-2"></i>简答题批改
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <p class="mb-1"><strong>学生:</strong> {{ submission.student.display_name }} ({{ submission.student.username }})</p>
+                    <p class="mb-1"><strong>测评:</strong> {{ submission.assessment.title }}</p>
+                    <p class="mb-1">
+                        <strong>当前得分:</strong>
+                        <span class="fw-bold">{{ submission.score }}</span>
+                        <span class="text-muted">/ {{ submission.total_score }}</span>
+                    </p>
+                </div>
+
+                {% if questions %}
+                <form method="POST" action="">
+                    {% for q in questions %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-medium">第 {{ loop.index }} 题 - {{ q.title }}</span>
+                                <span class="badge bg-info">满分 {{ q.score }} 分</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <strong>题目内容:</strong>
+                                <p class="mt-1">{{ q.content }}</p>
+                            </div>
+                            {% if q.correct_answer %}
+                            <div class="mb-2">
+                                <strong>参考答案:</strong>
+                                <p class="mt-1 text-muted">{{ q.correct_answer }}</p>
+                            </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <strong>学生作答:</strong>
+                                <div class="border rounded p-3 bg-light mt-1">
+                                    {{ answers.get(q.id|string, '未作答') }}
+                                </div>
+                            </div>
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <label for="score_{{ q.id }}" class="form-label mb-0"><strong>评分:</strong></label>
+                                </div>
+                                <div class="col-auto">
+                                    <input type="number" class="form-control form-control-sm" name="score_{{ q.id }}" 
+                                           id="score_{{ q.id }}" value="0" min="0" max="{{ q.score }}" style="width: 100px;">
+                                </div>
+                                <div class="col-auto">
+                                    <span class="text-muted small">/ {{ q.score }} 分</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.assessment_submissions', assessment_id=submission.assessment_id) }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>取消
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-lg me-1"></i>保存批改
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>此提交中没有简答题，无需手动批改。
+                </div>
+                <a href="{{ url_for('admin.assessment_submissions', assessment_id=submission.assessment_id) }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>返回提交列表
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-info-circle me-2"></i>批改说明</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small text-muted mb-0">
+                    <li class="mb-2">客观题（单选、多选）已自动批改，无需手动处理。</li>
+                    <li class="mb-2">简答题需要手动评分，每题满分已在题目旁标注。</li>
+                    <li class="mb-2">评分后会自动累加到已有得分中。</li>
+                    <li>如需重新评分，可以再次进入此页面修改。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

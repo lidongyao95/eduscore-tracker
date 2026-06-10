@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}{{ action }}测评 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clipboard-check me-2"></i>{{ action }}测评
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.unit_id.label(class="form-label") }}
+                        {{ form.unit_id(class="form-select" + (" is-invalid" if form.unit_id.errors else "")) }}
+                        {% if form.unit_id.errors %}
+                        <div class="invalid-feedback">{{ form.unit_id.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="请输入测评标题") }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">{{ form.title.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3", placeholder="请输入测评描述（可选）") }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback">{{ form.description.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            {{ form.type.label(class="form-label") }}
+                            {{ form.type(class="form-select" + (" is-invalid" if form.type.errors else "")) }}
+                            {% if form.type.errors %}
+                            <div class="invalid-feedback">{{ form.type.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.max_attempts.label(class="form-label") }}
+                            {{ form.max_attempts(class="form-control" + (" is-invalid" if form.max_attempts.errors else ""), type="number", min="0") }}
+                            {% if form.max_attempts.errors %}
+                            <div class="invalid-feedback">{{ form.max_attempts.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mt-4">
+                                {{ form.counts_toward_grade(class="form-check-input") }}
+                                {{ form.counts_toward_grade.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            {{ form.start_time.label(class="form-label") }}
+                            {{ form.start_time(class="form-control" + (" is-invalid" if form.start_time.errors else "")) }}
+                            {% if form.start_time.errors %}
+                            <div class="invalid-feedback">{{ form.start_time.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.end_time.label(class="form-label") }}
+                            {{ form.end_time(class="form-control" + (" is-invalid" if form.end_time.errors else "")) }}
+                            {% if form.end_time.errors %}
+                            <div class="invalid-feedback">{{ form.end_time.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 题目选择器 -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">选择题目</label>
+                        <div class="d-flex mb-2 gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAll()">
+                                <i class="bi bi-check-all me-1"></i>全选
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">
+                                <i class="bi bi-x-circle me-1"></i>取消选择
+                            </button>
+                        </div>
+                        {% if questions %}
+                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                            {% for q in questions %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="selected_questions" 
+                                       value="{{ q.id }}" id="q_{{ q.id }}"
+                                       {% if selected_qids and q.id in selected_qids %}checked{% endif %}>
+                                <label class="form-check-label" for="q_{{ q.id }}">
+                                    <span class="fw-medium">{{ q.title }}</span>
+                                    <span class="badge {% if q.type == 'single_choice' %}bg-primary{% elif q.type == 'multi_choice' %}bg-success{% else %}bg-info{% endif %} ms-2">
+                                        {% if q.type == 'single_choice' %}单选题
+                                        {% elif q.type == 'multi_choice' %}多选题
+                                        {% else %}简答题
+                                        {% endif %}
+                                    </span>
+                                    <span class="badge bg-light text-dark ms-1">{{ q.score }} 分</span>
+                                    <small class="text-muted d-block">{{ q.content[:50] }}{% if q.content|length > 50 %}...{% endif %}</small>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>还没有创建任何题目，请先
+                            <a href="{{ url_for('admin.create_question') }}" class="alert-link">创建题目</a>。
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.assessments') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>返回列表
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>{{ action }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function selectAll() {
+    document.querySelectorAll('input[name="selected_questions"]').forEach(function(cb) {
+        cb.checked = true;
+    });
+}
+function deselectAll() {
+    document.querySelectorAll('input[name="selected_questions"]').forEach(function(cb) {
+        cb.checked = false;
+    });
+}
+</script>
+{% endblock %}

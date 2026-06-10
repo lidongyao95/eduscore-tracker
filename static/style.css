@@ -1,0 +1,122 @@
+/* EduScore Tracker - Custom Styles */
+
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Card hover effect */
+.card {
+    transition: box-shadow 0.2s ease;
+}
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Assessment card */
+.assessment-card {
+    border-left: 4px solid #0d6efd;
+}
+.assessment-card.pre-test {
+    border-left-color: #0d6efd;
+}
+.assessment-card.post-test {
+    border-left-color: #198754;
+}
+
+/* Status badges */
+.badge-pre {
+    background-color: #0d6efd;
+}
+.badge-post {
+    background-color: #198754;
+}
+.badge-draft {
+    background-color: #6c757d;
+}
+.badge-published {
+    background-color: #0d6efd;
+}
+.badge-ended {
+    background-color: #dc3545;
+}
+
+/* Question type badges */
+.badge-single-choice {
+    background-color: #6f42c1;
+}
+.badge-multi-choice {
+    background-color: #fd7e14;
+}
+.badge-short-answer {
+    background-color: #20c997;
+}
+
+/* Stat cards */
+.stat-card {
+    border-radius: 12px;
+    border: none;
+}
+.stat-card .card-body {
+    padding: 1.5rem;
+}
+.stat-card .stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+.stat-card .stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Login page */
+.login-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+}
+
+/* Chart containers */
+.chart-container {
+    width: 100%;
+    min-height: 400px;
+}
+
+/* Test taking */
+.question-card {
+    border-left: 3px solid #0d6efd;
+    margin-bottom: 1.5rem;
+}
+
+/* Result page */
+.result-correct {
+    border-left: 4px solid #198754 !important;
+}
+.result-incorrect {
+    border-left: 4px solid #dc3545 !important;
+}
+.result-pending {
+    border-left: 4px solid #ffc107 !important;
+}
+
+/* Footer */
+.footer {
+    margin-top: 3rem;
+    padding: 1.5rem 0;
+    background-color: #fff;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.85rem;
+}

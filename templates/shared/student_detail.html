@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}学生详情 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ back_url or url_for('admin.students') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>{% if current_user.role == 'student' %}返回学习中心{% else %}返回学生列表{% endif %}
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h3 class="mb-1">{{ student.display_name }}</h3>
+                <div class="text-muted">@{{ student.username }}</div>
+            </div>
+            {% if current_user.role == 'teacher' %}
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin.export_student', student_id=student.id) }}">
+                <i class="bi bi-download me-1"></i>导出成长数据
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if submissions %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="card-title mb-0"><i class="bi bi-bar-chart-line me-2"></i>成长轨迹</h5>
+            <div class="d-flex align-items-center gap-2">
+                <label for="growthGroupMode" class="small text-muted mb-0">分组方式</label>
+                <select id="growthGroupMode" class="form-select form-select-sm" style="width: 240px;">
+                    <option value="assessment">方式 1：按测评分组</option>
+                    <option value="unit">方式 2：按教学单元分组</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info py-2 small mb-3" id="growthChartHint">方式 1 会按前测 / 后测测评对比；方式 2 会按教学单元汇总，切换后图表会立即变化。</div>
+            <div id="growthChart" style="height: 420px;"></div>
+        </div>
+    </div>
+
+    <h5 class="mb-3"><i class="bi bi-list-check me-2"></i>提交记录</h5>
+    {% set grouped = {} %}
+    {% for s in submissions %}
+        {% set aid = s.assessment_id %}
+        {% if aid not in grouped %}
+            {% set _ = grouped.update({aid: {'assessment': s.assessment, 'submissions': []}}) %}
+        {% endif %}
+        {% set _ = grouped[aid].submissions.append(s) %}
+    {% endfor %}
+
+    {% for aid, data in grouped.items() %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-medium">{{ data.assessment.title }}</span>
+                <span class="badge {% if data.assessment.type == 'pre_test' %}bg-primary{% else %}bg-success{% endif %}">
+                    {{ '前测' if data.assessment.type == 'pre_test' else '后测' }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>次数</th>
+                        <th>得分</th>
+                        <th>比例</th>
+                        <th>提交时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in data.submissions %}
+                    <tr>
+                        <td>第 {{ sub.attempt_number }} 次</td>
+                        <td>{{ sub.score }} / {{ sub.total_score }}</td>
+                        <td>
+                            {% if sub.total_score > 0 %}
+                            <div class="progress" style="height: 8px; max-width: 120px;">
+                                <div class="progress-bar {% if (sub.score / sub.total_score * 100) >= 60 %}bg-success{% else %}bg-warning{% endif %}" style="width: {{ (sub.score / sub.total_score * 100)|round|int }}%;"></div>
+                            </div>
+                            <small>{{ (sub.score / sub.total_score * 100)|round|int }}%</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted">{{ sub.submitted_at.strftime('%Y-%m-%d %H:%M:%S') if sub.submitted_at else '' }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-inbox fs-1 text-muted"></i>
+    <p class="text-muted mt-3">该学生还没有任何提交记录</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% set chart_dom_id = 'growthChart' %}
+{% set chart_mode = 'assessment' %}
+{% set chart_payload = chart_payload %}
+{% include 'shared/_growth_chart.html' with context %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modeSelect = document.getElementById('growthGroupMode');
+    var hintEl = document.getElementById('growthChartHint');
+    if (!modeSelect || !hintEl) return;
+    modeSelect.addEventListener('change', function () {
+        hintEl.textContent = modeSelect.value === 'unit'
+            ? '方式 2：按教学单元汇总前测、后测与增益，适合看单元整体成长。'
+            : '方式 1：按测评展示前测 / 后测对比，适合看单次测验结果。';
+    });
+});
+</script>
+{% endblock %}

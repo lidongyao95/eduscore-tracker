@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}作答测评 - {{ assessment.title }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>返回测评列表
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header 
+                {% if assessment.type == 'pre_test' %}bg-primary text-white{% else %}bg-success text-white{% endif %}">
+                <h5 class="mb-0">{{ assessment.title }}</h5>
+            </div>
+            <div class="card-body">
+                {% if assessment.description %}
+                <div class="alert alert-light border mb-3">
+                    {{ assessment.description }}
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('student.take_assessment', assessment_id=assessment.id) }}">
+                    
+                    {% for q in questions %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">第 {{ loop.index }} 题</span>
+                            <span class="badge bg-secondary">({{ q.score }} 分)</span>
+                        </div>
+                        <div class="card-body">
+                            <!-- 题型标签 -->
+                            <span class="badge 
+                                {% if q.type == 'single_choice' %}bg-info
+                                {% elif q.type == 'multi_choice' %}bg-warning text-dark
+                                {% else %}bg-secondary
+                                {% endif %} mb-2">
+                                {% if q.type == 'single_choice' %}单选题
+                                {% elif q.type == 'multi_choice' %}多选题
+                                {% else %}简答题
+                                {% endif %}
+                            </span>
+
+                            <!-- 题目内容 -->
+                            <div class="mb-3">
+                                {% if q.title %}
+                                <h6 class="mb-2">{{ q.title }}</h6>
+                                {% endif %}
+                                <p class="mb-0">{{ q.content }}</p>
+                            </div>
+
+                            <!-- 单选题：radio buttons -->
+                            {% if q.type == 'single_choice' and q.options %}
+                            <div class="ms-3">
+                                {% for opt in q.options %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" 
+                                           name="q_{{ q.id }}" 
+                                           id="q_{{ q.id }}_{{ loop.index0 }}" 
+                                           value="{{ opt[0] if opt|length > 0 else '' }}">
+                                    <label class="form-check-label" for="q_{{ q.id }}_{{ loop.index0 }}">
+                                        {{ opt }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <!-- 多选题：checkboxes -->
+                            {% if q.type == 'multi_choice' and q.options %}
+                            <div class="ms-3">
+                                {% for opt in q.options %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="q_{{ q.id }}" 
+                                           id="q_{{ q.id }}_{{ loop.index0 }}" 
+                                           value="{{ opt[0] if opt|length > 0 else '' }}">
+                                    <label class="form-check-label" for="q_{{ q.id }}_{{ loop.index0 }}">
+                                        {{ opt }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <!-- 简答题：textarea -->
+                            {% if q.type == 'short_answer' %}
+                            <div class="ms-3">
+                                <textarea class="form-control" name="q_{{ q.id }}" rows="4" 
+                                          placeholder="请输入你的答案..."></textarea>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- 提交按钮 -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send me-2"></i>提交答卷
+                        </button>
+                        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary">
+                            取消并返回
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

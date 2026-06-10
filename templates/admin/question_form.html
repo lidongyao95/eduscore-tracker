@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ action }}题目 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-question-circle me-2"></i>{{ action }}题目
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), placeholder="请输入题目标题") }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">{{ form.title.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control" + (" is-invalid" if form.content.errors else ""), rows="4", placeholder="请输入题目内容") }}
+                        {% if form.content.errors %}
+                        <div class="invalid-feedback">{{ form.content.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            {{ form.type.label(class="form-label") }}
+                            {{ form.type(class="form-select" + (" is-invalid" if form.type.errors else ""), onchange="toggleOptions()") }}
+                            {% if form.type.errors %}
+                            <div class="invalid-feedback">{{ form.type.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.score.label(class="form-label") }}
+                            {{ form.score(class="form-control" + (" is-invalid" if form.score.errors else ""), type="number", min="1") }}
+                            {% if form.score.errors %}
+                            <div class="invalid-feedback">{{ form.score.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="optionsGroup">
+                        {{ form.options.label(class="form-label") }}
+                        {{ form.options(class="form-control", rows="6", placeholder="每行一个选项，如：A. 选项内容") }}
+                        <div class="form-text">仅在单选题或多选题时需要填写选项，简答题可留空。</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.correct_answer.label(class="form-label") }}
+                        {{ form.correct_answer(class="form-control" + (" is-invalid" if form.correct_answer.errors else ""), placeholder="单选题填字母(A/B/C...)，多选题用逗号分隔(A,B)，简答题无需填写") }}
+                        {% if form.correct_answer.errors %}
+                        <div class="invalid-feedback">{{ form.correct_answer.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('admin.questions') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>返回列表
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>{{ action }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleOptions() {
+    var typeSelect = document.querySelector('[name="type"]');
+    var optionsGroup = document.getElementById('optionsGroup');
+    if (!typeSelect || !optionsGroup) return;
+    var val = typeSelect.value;
+    if (val === 'short_answer') {
+        optionsGroup.style.display = 'none';
+    } else {
+        optionsGroup.style.display = 'block';
+    }
+}
+// Run on page load
+document.addEventListener('DOMContentLoaded', function () {
+    toggleOptions();
+});
+</script>
+{% endblock %}

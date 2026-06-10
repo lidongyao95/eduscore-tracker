@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}管理后台 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2 me-2"></i>教师管理后台</h2>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-people fs-3 text-primary"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted small">学生总数</div>
+                    <div class="fs-3 fw-bold">{{ student_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-question-circle fs-3 text-success"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted small">题目总数</div>
+                    <div class="fs-3 fw-bold">{{ question_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-clipboard-check fs-3 text-info"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted small">测评总数</div>
+                    <div class="fs-3 fw-bold">{{ assessment_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="flex-shrink-0 me-3">
+                    <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted small">提交总数</div>
+                    <div class="fs-3 fw-bold">{{ pending_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ECharts 饼图 -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0"><i class="bi bi-pie-chart me-2"></i>测评类型分布</h5>
+            </div>
+            <div class="card-body">
+                <div id="pieChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0"><i class="bi bi-lightning-charge me-2"></i>快捷操作</h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center gap-3">
+                <a href="{{ url_for('admin.questions') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-question-circle me-2"></i>管理题目
+                </a>
+                <a href="{{ url_for('admin.students') }}" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-people me-2"></i>管理学生
+                </a>
+                <a href="{{ url_for('admin.classes') }}" class="btn btn-outline-dark btn-lg">
+                    <i class="bi bi-building me-2"></i>教学班 ({{ class_count }})
+                </a>
+                <a href="{{ url_for('admin.assessments') }}" class="btn btn-outline-info btn-lg">
+                    <i class="bi bi-clipboard-check me-2"></i>管理测评
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var chartDom = document.getElementById('pieChart');
+    if (!chartDom) return;
+    var myChart = echarts.init(chartDom);
+    var option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: '{b}: {c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left'
+        },
+        series: [
+            {
+                name: '测评类型',
+                type: 'pie',
+                radius: ['40%', '70%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 6,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                label: {
+                    show: true,
+                    formatter: '{b}\n{d}%'
+                },
+                data: [
+                    { value: {{ pre_count }}, name: '前测', itemStyle: { color: '#0d6efd' } },
+                    { value: {{ post_count }}, name: '后测', itemStyle: { color: '#198754' } }
+                ]
+            }
+        ]
+    };
+    myChart.setOption(option);
+    window.addEventListener('resize', function () { myChart.resize(); });
+});
+</script>
+{% endblock %}

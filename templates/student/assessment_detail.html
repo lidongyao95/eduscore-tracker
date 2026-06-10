@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}测评详情 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>返回测评列表
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- 测评信息 -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center
+                {% if assessment.type == 'pre_test' %}bg-primary text-white{% else %}bg-success text-white{% endif %}">
+                <h5 class="mb-0">{{ assessment.title }}</h5>
+                <span class="badge bg-light 
+                    {% if assessment.type == 'pre_test' %}text-primary{% else %}text-success{% endif %}">
+                    {% if assessment.type == 'pre_test' %}前测{% else %}后测{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if assessment.description %}
+                <div class="mb-3">
+                    <h6 class="text-muted">测评描述</h6>
+                    <p>{{ assessment.description }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">开始时间</small>
+                            <strong>{% if assessment.start_time %}{{ assessment.start_time.strftime('%Y-%m-%d %H:%M') }}{% else %}不限{% endif %}</strong>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">截止时间</small>
+                            <strong>{% if assessment.end_time %}{{ assessment.end_time.strftime('%Y-%m-%d %H:%M') }}{% else %}不限{% endif %}</strong>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">最大提交次数</small>
+                            <strong>{% if assessment.max_attempts > 0 %}{{ assessment.max_attempts }} 次{% else %}不限{% endif %}</strong>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2">
+                            <small class="text-muted d-block">当前状态</small>
+                            <strong>
+                                {% if assessment.is_open() %}
+                                <span class="text-success">开放中</span>
+                                {% else %}
+                                <span class="text-danger">已关闭</span>
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+
+                {% if can_submit %}
+                <a href="{{ url_for('student.take_assessment', assessment_id=assessment.id) }}" class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-pencil-square me-2"></i>开始作答
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- 提交记录 -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>提交记录</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>次数</th>
+                                <th>得分</th>
+                                <th>时间</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in submissions %}
+                            <tr>
+                                <td>第 {{ sub.attempt_number }} 次</td>
+                                <td>
+                                    <span class="fw-bold">{{ sub.score }}/{{ sub.total_score }}</span>
+                                </td>
+                                <td><small class="text-muted">{{ sub.submitted_at.strftime('%m-%d %H:%M') if sub.submitted_at else '-' }}</small></td>
+                                <td>
+                                    <a href="{{ url_for('student.submission_result', submission_id=sub.id) }}" class="btn btn-sm btn-outline-primary">
+                                        查看
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mt-2 small">暂无提交记录</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

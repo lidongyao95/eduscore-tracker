@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}EduScore Tracker - 登录{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12" style="max-width: 400px;">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h5 class="mb-0">EduScore Tracker - 登录</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">{{ form.username.label.text }}</label>
+                        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="请输入用户名") }}
+                        {% if form.username.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.username.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">{{ form.password.label.text }}</label>
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="请输入密码") }}
+                        {% if form.password.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.password.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">登录</button>
+                </form>
+            </div>
+            <div class="card-footer text-muted text-center">
+                <div class="d-flex flex-column gap-2">
+                    <small>教师账号: teacher / teacher123 | 学生账号: student1 / student123</small>
+                    <div>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-success btn-sm me-2">注册学生账号</a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-link btn-sm">返回登录页</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

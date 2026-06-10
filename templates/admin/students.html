@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}学生管理 - EduScore Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people me-2"></i>学生管理</h2>
+    <a href="{{ url_for('admin.create_student') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>添加学生
+    </a>
+</div>
+
+{% if student_data %}
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>姓名</th>
+                    <th>用户名</th>
+                    <th>提交次数</th>
+                    <th>注册时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in student_data %}
+                {% set s = item.user %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <span class="fw-medium">{{ s.display_name }}</span>
+                    </td>
+                    <td><code>{{ s.username }}</code></td>
+                    <td>
+                        <span class="badge bg-info">{{ item.submission_count }}</span>
+                    </td>
+                    <td><small class="text-muted">{{ s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '' }}</small></td>
+                    <td>
+                        <a href="{{ url_for('admin.student_detail', student_id=s.id) }}" class="btn btn-sm btn-outline-primary me-1">
+                            <i class="bi bi-eye me-1"></i>详情
+                        </a>
+                        <a href="{{ url_for('admin.export_student', student_id=s.id) }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download me-1"></i>导出
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-people fs-1 text-muted"></i>
+    <p class="text-muted mt-3">还没有注册任何学生</p>
+    <a href="{{ url_for('admin.create_student') }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>添加学生
+    </a>
+</div>
+{% endif %}
+{% endblock %}
