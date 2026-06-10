@@ -269,6 +269,7 @@ def class_gain_summary(teaching_class, student_ids):
             'students_without_pre': students_without_pre,
             'avg_absolute_gain': avg_abs,
             'avg_normalized_gain': avg_norm,
+            'objective_count': len(preloaded['objectives_by_unit'].get(unit.id, [])),
         })
 
     return {
