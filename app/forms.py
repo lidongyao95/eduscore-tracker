@@ -26,13 +26,13 @@ class TeachingClassForm(FlaskForm):
 
 class TeachingUnitForm(FlaskForm):
     title = StringField('单元标题', validators=[DataRequired()])
-    sort_order = IntegerField('排序', validators=[NumberRange(min=0)], default=0)
+    sort_order = IntegerField('排序', validators=[Optional(), NumberRange(min=0)], default=0)
     description = TextAreaField('单元描述')
 
 
 class LearningObjectiveForm(FlaskForm):
     title = StringField('学习目标', validators=[DataRequired()])
-    sort_order = IntegerField('排序', validators=[NumberRange(min=0)], default=0)
+    sort_order = IntegerField('排序', validators=[Optional(), NumberRange(min=0)], default=0)
     description = TextAreaField('目标描述')
 
 

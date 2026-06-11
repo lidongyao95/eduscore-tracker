@@ -17,8 +17,10 @@ def class_detail(class_id):
     student_ids = [s.id for s in tc.enrolled_students()]
     summary = class_gain_summary(tc, student_ids)
     units = tc.units
+    form = TeachingUnitForm()
     return render_template('admin/class_detail.html',
-                          teaching_class=tc, units=units, summary=summary)
+                          teaching_class=tc, units=units, summary=summary,
+                          form=form)
 
 
 # ── Teaching Unit CRUD ──────────────────────────────────────────────────
