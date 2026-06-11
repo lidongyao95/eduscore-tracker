@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderAssessmentGrowth() {
         var groups = buildAssessmentGroups();
-        groups.sort(function (a, b) { return a.groupOrder - b.groupOrder || a.typeOrder - b.typeOrder || a.label.localeCompare(b.label, 'zh-Hans-CN'); });
+        groups.sort(function (a, b) { return a.typeOrder - b.typeOrder || a.groupOrder - b.groupOrder || a.label.localeCompare(b.label, 'zh-Hans-CN'); });
         var labels = groups.map(function (a) { return a.label; });
         var preData = groups.map(function (a) { return a.pre; });
         var postData = groups.map(function (a) { return a.post; });
