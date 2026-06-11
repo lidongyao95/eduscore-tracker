@@ -97,15 +97,14 @@
                                     <span class="text-muted"><i class="bi bi-book me-1"></i>{{ tc.units|length }} 个单元</span>
                                 </div>
                                 <div class="mt-2">
-                                    {% set has_pre = false %}
-                                    {% set has_post = false %}
+                                    {% set ns = namespace(has_pre=false, has_post=false) %}
                                     {% for unit in tc.units %}
-                                        {% if unit.get_pre_assessment() %}{% set has_pre = true %}{% endif %}
-                                        {% if unit.get_post_assessment() %}{% set has_post = true %}{% endif %}
+                                        {% if unit.get_pre_assessment() %}{% set ns.has_pre = true %}{% endif %}
+                                        {% if unit.get_post_assessment() %}{% set ns.has_post = true %}{% endif %}
                                     {% endfor %}
-                                    {% if has_pre %}<span class="badge bg-primary me-1">有前测</span>{% endif %}
-                                    {% if has_post %}<span class="badge bg-success">有后测</span>{% endif %}
-                                    {% if not has_pre and not has_post %}<span class="text-muted small">暂无测评</span>{% endif %}
+                                    {% if ns.has_pre %}<span class="badge bg-primary me-1">有前测</span>{% endif %}
+                                    {% if ns.has_post %}<span class="badge bg-success">有后测</span>{% endif %}
+                                    {% if not ns.has_pre and not ns.has_post %}<span class="text-muted small">暂无测评</span>{% endif %}
                                 </div>
                             </div>
                         </div>
