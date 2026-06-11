@@ -92,11 +92,11 @@
                 {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
                 {% if unit.get_post_assessment() %}<span class="badge bg-success">有后测</span>{% endif %}
             </span>
-            <button class="btn btn-outline-secondary btn-sm py-0 px-1 sort-btn" title="上移"
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1 sort-btn sort-up-btn{% if loop.first %} invisible{% endif %}" title="上移"
                     data-action="{{ url_for('admin.move_unit_up', unit_id=unit.id) }}">
                 <i class="bi bi-arrow-up"></i>
             </button>
-            <button class="btn btn-outline-secondary btn-sm py-0 px-1 sort-btn" title="下移"
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1 sort-btn sort-down-btn{% if loop.last %} invisible{% endif %}" title="下移"
                     data-action="{{ url_for('admin.move_unit_down', unit_id=unit.id) }}">
                 <i class="bi bi-arrow-down"></i>
             </button>
@@ -172,10 +172,24 @@ function resetUnitForm() {
     document.getElementById('unitDescription').value = '';
 }
 
+function updateSortButtonVisibility() {
+    var cards = document.querySelectorAll('.unit-card');
+    cards.forEach(function(card, index) {
+        var upBtn = card.querySelector('.sort-up-btn');
+        var downBtn = card.querySelector('.sort-down-btn');
+        if (upBtn) {
+            upBtn.classList.toggle('invisible', index === 0);
+        }
+        if (downBtn) {
+            downBtn.classList.toggle('invisible', index === cards.length - 1);
+        }
+    });
+}
+
 function handleSortClick(e) {
     e.preventDefault();
     var btn = e.currentTarget;
-    if (btn.disabled) return;
+    if (btn.disabled || btn.classList.contains('invisible')) return;
     btn.disabled = true;
     var action = btn.getAttribute('data-action');
     fetch(action, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -197,6 +211,7 @@ function handleSortClick(e) {
                         parent.insertBefore(card, ref);
                         parent.insertBefore(other, card.nextSibling);
                     }
+                    updateSortButtonVisibility();
                 }
             }
             btn.disabled = false;
@@ -227,6 +242,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.sort-btn').forEach(function (btn) {
         btn.addEventListener('click', handleSortClick);
     });
+
+    // Initial visibility — hide up on first, down on last
+    updateSortButtonVisibility();
 });
 </script>
 {% endblock %}

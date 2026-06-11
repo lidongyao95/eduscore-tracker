@@ -156,42 +156,32 @@ def delete_unit(unit_id):
 @teacher_required
 def move_unit_up(unit_id):
     unit = TeachingUnit.query.get_or_404(unit_id)
-    tc = unit.teaching_class
-    if tc.teacher_id != current_user.id:
+    if unit.teaching_class.teacher_id != current_user.id:
         abort(403)
-    prev_unit = TeachingUnit.query.filter(
-        TeachingUnit.class_id == tc.id,
-        TeachingUnit.sort_order < unit.sort_order
-    ).order_by(TeachingUnit.sort_order.desc()).first()
-    if prev_unit:
-        unit.sort_order, prev_unit.sort_order = prev_unit.sort_order, unit.sort_order
+    swapped = unit.swap_with_prev()
+    if swapped:
         db.session.commit()
         cache.delete_memoized(class_gain_summary)
         cache.delete_memoized(build_student_growth_context)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return {'ok': True, 'swapped_with': prev_unit.id if prev_unit else None}
-    return redirect(url_for('admin.class_detail', class_id=tc.id))
+        return {'ok': True, 'swapped_with': swapped.id if swapped else None}
+    return redirect(url_for('admin.class_detail', class_id=unit.teaching_class.id))
 
 
 @admin_bp.route('/units/<int:unit_id>/move-down', methods=['POST'])
 @teacher_required
 def move_unit_down(unit_id):
     unit = TeachingUnit.query.get_or_404(unit_id)
-    tc = unit.teaching_class
-    if tc.teacher_id != current_user.id:
+    if unit.teaching_class.teacher_id != current_user.id:
         abort(403)
-    next_unit = TeachingUnit.query.filter(
-        TeachingUnit.class_id == tc.id,
-        TeachingUnit.sort_order > unit.sort_order
-    ).order_by(TeachingUnit.sort_order.asc()).first()
-    if next_unit:
-        unit.sort_order, next_unit.sort_order = next_unit.sort_order, unit.sort_order
+    swapped = unit.swap_with_next()
+    if swapped:
         db.session.commit()
         cache.delete_memoized(class_gain_summary)
         cache.delete_memoized(build_student_growth_context)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return {'ok': True, 'swapped_with': next_unit.id if next_unit else None}
-    return redirect(url_for('admin.class_detail', class_id=tc.id))
+        return {'ok': True, 'swapped_with': swapped.id if swapped else None}
+    return redirect(url_for('admin.class_detail', class_id=unit.teaching_class.id))
 
 
 @admin_bp.route('/questions')

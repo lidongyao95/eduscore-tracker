@@ -87,6 +87,28 @@ class TeachingUnit(db.Model):
     def objective_ids(self):
         return [o.id for o in self.objectives]
 
+    def swap_with_prev(self):
+        """与同一班级中 sort_order 小于自己的最大单元交换排序；返回被交换单元或 None"""
+        prev_unit = TeachingUnit.query.filter(
+            TeachingUnit.class_id == self.class_id,
+            TeachingUnit.sort_order < self.sort_order
+        ).order_by(TeachingUnit.sort_order.desc()).first()
+        if not prev_unit:
+            return None
+        self.sort_order, prev_unit.sort_order = prev_unit.sort_order, self.sort_order
+        return prev_unit
+
+    def swap_with_next(self):
+        """与同一班级中 sort_order 大于自己的最小单元交换排序；返回被交换单元或 None"""
+        next_unit = TeachingUnit.query.filter(
+            TeachingUnit.class_id == self.class_id,
+            TeachingUnit.sort_order > self.sort_order
+        ).order_by(TeachingUnit.sort_order.asc()).first()
+        if not next_unit:
+            return None
+        self.sort_order, next_unit.sort_order = next_unit.sort_order, self.sort_order
+        return next_unit
+
 
 class LearningObjective(db.Model):
     """学习目标 — 平行测验通过覆盖相同目标集合来确保前后测对等"""
