@@ -209,6 +209,11 @@ def build_student_growth_context(student_id, class_ids=None):
                     point_type='post_test', type_order=1,
                     pct=report['post_rate']))
 
+    # ── build unit sort_order lookup for assessment ordering ─────────
+    unit_sort_map = {u.id: u.sort_order for u in all_units}
+    unit_class_map = {u.id: u.teaching_class.name for u in all_units
+                      if u.teaching_class}
+
     # ── build assessment-level view (same preloaded data) ─────────────
     all_submissions = []
     assessment_map = {}
@@ -239,6 +244,8 @@ def build_student_growth_context(student_id, class_ids=None):
             group_type='assessment',
             group_id=a_id,
             group_label=assessment.title,
+            group_order=unit_sort_map.get(assessment.unit_id),
+            class_name=unit_class_map.get(assessment.unit_id),
             point_type=assessment.type,
             type_order=0 if assessment.type == 'pre_test' else 1,
             pct=round(rate, 1) if rate is not None else None,
