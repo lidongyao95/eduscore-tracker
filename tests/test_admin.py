@@ -325,3 +325,47 @@ class TestMoveUnitDownEndpoint:
         resp = client.post(f'/admin/units/{unit_a_id}/move-down')
         assert resp.status_code == 302
         assert f'/admin/classes/{teaching_class_id}' in resp.location
+
+
+# ——————————————————————————————————————————————
+# Unit ordering — growth view cache invalidation
+# ——————————————————————————————————————————————
+
+
+class TestGrowthViewOrderAfterMove:
+
+    def test_growth_view_reflects_new_order_after_move(self, app, client,
+                                                        teaching_class_id,
+                                                        teacher_id,
+                                                        student_id):
+        """After moving a unit up, build_student_growth_context returns
+        unit_reports in the new sort_order, proving cache was invalidated."""
+        from app.services.growth import build_student_growth_context
+
+        unit_a_id, unit_b_id = _create_two_units(app, teaching_class_id)
+
+        # 1. Call once to populate the memoize cache
+        with app.app_context():
+            growth1 = build_student_growth_context(student_id, [teaching_class_id])
+            titles1 = [r['unit_title'] for r in growth1['unit_reports']]
+            assert titles1 == ['单元A', '单元B'], f'Initial order wrong: {titles1}'
+
+        # 2. Move unit B up (swap A and B)
+        login_as_teacher(client)
+        resp = client.post(
+            f'/admin/units/{unit_b_id}/move-up',
+            headers={'X-Requested-With': 'XMLHttpRequest'},
+        )
+        assert resp.status_code == 200
+        data = json.loads(resp.data)
+        assert data['ok'] is True
+        assert data['swapped_with'] == unit_a_id
+
+        # 3. Call again — must reflect the new order (cache was invalidated)
+        with app.app_context():
+            growth2 = build_student_growth_context(student_id, [teaching_class_id])
+            titles2 = [r['unit_title'] for r in growth2['unit_reports']]
+            assert titles2 == ['单元B', '单元A'], (
+                f'Growth view did not reflect new sort_order after move: {titles2}. '
+                f'Cache invalidation may have failed.'
+            )

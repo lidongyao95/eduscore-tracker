@@ -61,6 +61,7 @@ _CP_ASSESSMENT_EXTRAS = {'assessment_id', 'assessment_title', 'unit_title',
 
 def _make_chart_point(*, group_type, group_id, group_label, point_type,
                       type_order, pct, total=100,
+                      group_order=None, class_name=None,
                       assessment_id=None, assessment_title=None,
                       unit_title=None, attempt=None, score=None,
                       submitted_at=None, **_):
@@ -68,11 +69,15 @@ def _make_chart_point(*, group_type, group_id, group_label, point_type,
 
     group_type  = 'unit' | 'assessment'
     point_type  = 'pre_test' | 'post_test'
+    group_order = sort_order of the underlying unit (unit mode only)
+    class_name  = teaching class name for multi-class students
     """
     return {
         'group_type':       group_type,
         'group_id':         group_id,
         'group_label':      group_label,
+        'group_order':      group_order,
+        'class_name':       class_name,
         'type':             point_type,
         'type_order':       type_order,
         'total':            total,
@@ -191,12 +196,16 @@ def build_student_growth_context(student_id, class_ids=None):
                 unified_payload.append(_make_chart_point(
                     group_type='unit', group_id=unit.id,
                     group_label=item['group_label'],
+                    group_order=unit.sort_order,
+                    class_name=tc.name,
                     point_type='pre_test', type_order=0,
                     pct=report['pre_rate']))
             if report['post_rate'] is not None:
                 unified_payload.append(_make_chart_point(
                     group_type='unit', group_id=unit.id,
                     group_label=item['group_label'],
+                    group_order=unit.sort_order,
+                    class_name=tc.name,
                     point_type='post_test', type_order=1,
                     pct=report['post_rate']))
 
