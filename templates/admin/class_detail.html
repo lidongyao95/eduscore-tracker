@@ -203,8 +203,12 @@ function handleSortClick(e) {
                     var parent = card.parentNode;
                     var nextA = card.nextSibling === other ? card : other.nextSibling === card ? other : null;
                     if (nextA) {
-                        // Adjacent cards — simple swap
-                        parent.insertBefore(card, other);
+                        // Adjacent cards — swap by inserting the leading one
+                        if (nextA === card) {
+                            parent.insertBefore(other, card);
+                        } else {
+                            parent.insertBefore(card, other);
+                        }
                     } else {
                         // Non-adjacent — insert + reorder
                         var ref = other.nextSibling;
