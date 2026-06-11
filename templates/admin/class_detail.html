@@ -84,20 +84,22 @@
     </button>
 </div>
 {% for unit in units %}
-<div class="card mb-3 border-0 shadow-sm">
+<div class="card mb-3 border-0 shadow-sm unit-card" data-unit-id="{{ unit.id }}">
     <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span class="fw-bold">{{ unit.title }}</span>
+        <span class="fw-bold"><span class="chapter-num">{{ loop.index }}</span>. {{ unit.title }}</span>
         <div class="d-flex align-items-center gap-1">
             <span class="me-2">
                 {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
                 {% if unit.get_post_assessment() %}<span class="badge bg-success">有后测</span>{% endif %}
             </span>
-            <form method="POST" action="{{ url_for('admin.move_unit_up', unit_id=unit.id) }}" class="d-inline">
-                <button class="btn btn-outline-secondary btn-sm py-0 px-1" title="上移"><i class="bi bi-arrow-up"></i></button>
-            </form>
-            <form method="POST" action="{{ url_for('admin.move_unit_down', unit_id=unit.id) }}" class="d-inline">
-                <button class="btn btn-outline-secondary btn-sm py-0 px-1" title="下移"><i class="bi bi-arrow-down"></i></button>
-            </form>
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1 sort-btn" title="上移"
+                    data-action="{{ url_for('admin.move_unit_up', unit_id=unit.id) }}">
+                <i class="bi bi-arrow-up"></i>
+            </button>
+            <button class="btn btn-outline-secondary btn-sm py-0 px-1 sort-btn" title="下移"
+                    data-action="{{ url_for('admin.move_unit_down', unit_id=unit.id) }}">
+                <i class="bi bi-arrow-down"></i>
+            </button>
             <button class="btn btn-outline-warning btn-sm py-0 px-1" title="编辑"
                     data-bs-toggle="modal" data-bs-target="#unitModal"
                     data-unit-id="{{ unit.id }}"
@@ -169,13 +171,55 @@ function resetUnitForm() {
     document.getElementById('unitSortOrder').value = '';
     document.getElementById('unitDescription').value = '';
 }
+
+function updateChapterNumbers() {
+    document.querySelectorAll('.unit-card').forEach(function (card, i) {
+        var num = card.querySelector('.chapter-num');
+        if (num) num.textContent = i + 1;
+    });
+}
+
+function handleSortClick(e) {
+    e.preventDefault();
+    var btn = e.currentTarget;
+    if (btn.disabled) return;
+    btn.disabled = true;
+    var action = btn.getAttribute('data-action');
+    fetch(action, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.ok && data.swapped_with) {
+                var card = btn.closest('.unit-card');
+                var other = document.querySelector('.unit-card[data-unit-id="' + data.swapped_with + '"]');
+                if (card && other) {
+                    // Swap the two cards in the DOM
+                    var parent = card.parentNode;
+                    var nextA = card.nextSibling === other ? card : other.nextSibling === card ? other : null;
+                    if (nextA) {
+                        // Adjacent cards — simple swap
+                        parent.insertBefore(card, other);
+                    } else {
+                        // Non-adjacent — insert + reorder
+                        var ref = other.nextSibling;
+                        parent.insertBefore(card, ref);
+                        parent.insertBefore(other, card.nextSibling);
+                    }
+                    updateChapterNumbers();
+                }
+            }
+            btn.disabled = false;
+        })
+        .catch(function () { btn.disabled = false; });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Unit modal edit pre-fill
     var unitModal = document.getElementById('unitModal');
     unitModal.addEventListener('show.bs.modal', function (event) {
         var btn = event.relatedTarget;
         if (!btn) return;
         var unitId = btn.getAttribute('data-unit-id');
-        if (!unitId) return; // creating new unit, reset handled by resetUnitForm
+        if (!unitId) return;
         var title = btn.getAttribute('data-title');
         var sortOrder = btn.getAttribute('data-sort-order');
         var desc = btn.getAttribute('data-description');
@@ -185,6 +229,11 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('unitTitle').value = title;
         document.getElementById('unitSortOrder').value = sortOrder;
         document.getElementById('unitDescription').value = desc;
+    });
+
+    // Sort buttons — AJAX
+    document.querySelectorAll('.sort-btn').forEach(function (btn) {
+        btn.addEventListener('click', handleSortClick);
     });
 });
 </script>

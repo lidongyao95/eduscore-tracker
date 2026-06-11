@@ -159,7 +159,6 @@ def move_unit_up(unit_id):
     tc = unit.teaching_class
     if tc.teacher_id != current_user.id:
         abort(403)
-    # find the unit with the next lower sort_order
     prev_unit = TeachingUnit.query.filter(
         TeachingUnit.class_id == tc.id,
         TeachingUnit.sort_order < unit.sort_order
@@ -169,6 +168,8 @@ def move_unit_up(unit_id):
         db.session.commit()
         cache.delete_memoized(class_gain_summary)
         cache.delete_memoized(build_student_growth_context)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return {'ok': True, 'swapped_with': prev_unit.id if prev_unit else None}
     return redirect(url_for('admin.class_detail', class_id=tc.id))
 
 
@@ -179,7 +180,6 @@ def move_unit_down(unit_id):
     tc = unit.teaching_class
     if tc.teacher_id != current_user.id:
         abort(403)
-    # find the unit with the next higher sort_order
     next_unit = TeachingUnit.query.filter(
         TeachingUnit.class_id == tc.id,
         TeachingUnit.sort_order > unit.sort_order
@@ -189,6 +189,8 @@ def move_unit_down(unit_id):
         db.session.commit()
         cache.delete_memoized(class_gain_summary)
         cache.delete_memoized(build_student_growth_context)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return {'ok': True, 'swapped_with': next_unit.id if next_unit else None}
     return redirect(url_for('admin.class_detail', class_id=tc.id))
 
 

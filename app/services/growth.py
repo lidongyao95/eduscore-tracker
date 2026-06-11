@@ -11,10 +11,6 @@ logger = logging.getLogger(__name__)
 
 # ── helpers ────────────────────────────────────────────────────────────
 
-def _chapter_number(unit, fallback_index):
-    return unit.sort_order if unit.sort_order and unit.sort_order > 0 else fallback_index
-
-
 def _discover_class_ids_from_submissions(student_id):
     """When a student is not formally enrolled, discover their classes via
     existing submissions (assessment → unit → class)."""
@@ -185,7 +181,7 @@ def build_student_growth_context(student_id, class_ids=None):
         units = list(tc.units)
         for idx, unit in enumerate(units, start=1):
             report = unit_gain_for_student_cached(unit, student_id, preloaded)
-            chapter_number = _chapter_number(unit, idx)
+            chapter_number = idx
             report['class_name'] = tc.name
             report['chapter_number'] = chapter_number
             report['chapter_label'] = f'第{chapter_number}章'
