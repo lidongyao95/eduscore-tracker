@@ -35,6 +35,17 @@ def _create_two_units(app, teaching_class_id):
         return u1.id, u2.id
 
 
+def _create_three_units(app, teaching_class_id):
+    """Helper: create three units sort_order=1,2,3; returns (a_id, b_id, c_id)."""
+    with app.app_context():
+        ua = TeachingUnit(class_id=teaching_class_id, title='单元A', sort_order=1)
+        ub = TeachingUnit(class_id=teaching_class_id, title='单元B', sort_order=2)
+        uc = TeachingUnit(class_id=teaching_class_id, title='单元C', sort_order=3)
+        db.session.add_all([ua, ub, uc])
+        db.session.commit()
+        return ua.id, ub.id, uc.id
+
+
 class TestAdminAccess:
 
     def test_teacher_access_admin_dashboard(self, client, teacher_id):
@@ -368,4 +379,200 @@ class TestGrowthViewOrderAfterMove:
             assert titles2 == ['单元B', '单元A'], (
                 f'Growth view did not reflect new sort_order after move: {titles2}. '
                 f'Cache invalidation may have failed.'
+            )
+
+
+# ——————————————————————————————————————————————
+# Unit ordering — multi-swap model tests
+# ——————————————————————————————————————————————
+
+
+class TestUnitSwapMultiStep:
+
+    def test_consecutive_swaps_with_three_units(self, app, teaching_class_id):
+        """A(1),B(2),C(3): two swap_with_next(A) → A(3),B(1),C(2)"""
+        a_id, b_id, c_id = _create_three_units(app, teaching_class_id)
+        with app.app_context():
+            a = db.session.get(TeachingUnit, a_id)
+            b = db.session.get(TeachingUnit, b_id)
+            c = db.session.get(TeachingUnit, c_id)
+
+            # First: swap A down → A↔B
+            r1 = a.swap_with_next()
+            assert r1 is not None and r1.id == b_id
+            # A.sort_order should now be 2, B's is 1
+            db.session.commit()
+            db.session.refresh(a)
+            db.session.refresh(b)
+            assert a.sort_order == 2
+            assert b.sort_order == 1
+
+            # Second: swap A down again → A↔C
+            r2 = a.swap_with_next()
+            assert r2 is not None and r2.id == c_id
+            db.session.commit()
+            db.session.refresh(a)
+            db.session.refresh(c)
+            assert a.sort_order == 3
+            assert c.sort_order == 2
+
+            # Final state: B(1), C(2), A(3)
+            db.session.refresh(b)
+            assert b.sort_order == 1
+
+    def test_swap_round_trip(self, app, teaching_class_id):
+        """swap down then up → back to original sort_order"""
+        a_id, b_id, _ = _create_three_units(app, teaching_class_id)
+        with app.app_context():
+            a = db.session.get(TeachingUnit, a_id)
+            assert a.sort_order == 1
+
+            # Down: A↔B
+            a.swap_with_next()
+            db.session.commit()
+            db.session.refresh(a)
+            assert a.sort_order == 2
+
+            # Up: A↔B (back)
+            a.swap_with_prev()
+            db.session.commit()
+            db.session.refresh(a)
+            assert a.sort_order == 1
+
+    def test_swap_with_gapped_sort_order(self, app, teaching_class_id):
+        """Units with sort_order gaps: 0,5,10 — middle unit swaps correctly"""
+        with app.app_context():
+            u0 = TeachingUnit(class_id=teaching_class_id, title='Gap0', sort_order=0)
+            u5 = TeachingUnit(class_id=teaching_class_id, title='Gap5', sort_order=5)
+            u10 = TeachingUnit(class_id=teaching_class_id, title='Gap10', sort_order=10)
+            db.session.add_all([u0, u5, u10])
+            db.session.commit()
+
+            # Swap middle unit up → u5↔u0
+            r = u5.swap_with_prev()
+            assert r is not None and r.id == u0.id
+            db.session.commit()
+            db.session.refresh(u5)
+            db.session.refresh(u0)
+            assert u5.sort_order == 0
+            assert u0.sort_order == 5
+
+            # Swap middle unit down → u5(0)↔u0(5) back to u0(0),u5(5),u10(10)
+            r2 = u5.swap_with_next()
+            assert r2 is not None and r2.id == u0.id
+            db.session.commit()
+            db.session.refresh(u5)
+            db.session.refresh(u0)
+            db.session.refresh(u10)
+            assert u5.sort_order == 5
+            assert u0.sort_order == 0
+            assert u10.sort_order == 10
+
+
+# ——————————————————————————————————————————————
+# Unit ordering — multi-swap endpoint tests
+# ——————————————————————————————————————————————
+
+
+class TestUnitMoveMultiStepEndpoint:
+
+    def test_consecutive_move_down_ajax(self, app, client, teaching_class_id,
+                                        teacher_id):
+        """A(1),B(2),C(3): two consecutive move-down on A → final swapped_with=C"""
+        a_id, b_id, c_id = _create_three_units(app, teaching_class_id)
+        login_as_teacher(client)
+
+        # First move-down: A↔B
+        r1 = client.post(f'/admin/units/{a_id}/move-down',
+                         headers={'X-Requested-With': 'XMLHttpRequest'})
+        assert r1.status_code == 200
+        d1 = json.loads(r1.data)
+        assert d1['ok'] is True
+        assert d1['swapped_with'] == b_id
+
+        # Second move-down: A↔C
+        r2 = client.post(f'/admin/units/{a_id}/move-down',
+                         headers={'X-Requested-With': 'XMLHttpRequest'})
+        assert r2.status_code == 200
+        d2 = json.loads(r2.data)
+        assert d2['ok'] is True
+        assert d2['swapped_with'] == c_id
+
+    def test_move_down_then_up_round_trip(self, app, client, teaching_class_id,
+                                           teacher_id):
+        """A down then up → back to original position (swapped_with matches)"""
+        a_id, b_id, _ = _create_three_units(app, teaching_class_id)
+        login_as_teacher(client)
+
+        # Down: A↔B
+        r1 = client.post(f'/admin/units/{a_id}/move-down',
+                         headers={'X-Requested-With': 'XMLHttpRequest'})
+        assert r1.status_code == 200
+        d1 = json.loads(r1.data)
+        assert d1['swapped_with'] == b_id
+
+        # Up: A↔B (back)
+        r2 = client.post(f'/admin/units/{a_id}/move-up',
+                         headers={'X-Requested-With': 'XMLHttpRequest'})
+        assert r2.status_code == 200
+        d2 = json.loads(r2.data)
+        assert d2['swapped_with'] == b_id
+
+    def test_sort_order_consistency_after_moves(self, app, client,
+                                                 teaching_class_id, teacher_id):
+        """After multiple moves, all units have unique sort_order values."""
+        a_id, b_id, c_id = _create_three_units(app, teaching_class_id)
+        login_as_teacher(client)
+
+        # Move A down twice
+        client.post(f'/admin/units/{a_id}/move-down',
+                    headers={'X-Requested-With': 'XMLHttpRequest'})
+        client.post(f'/admin/units/{a_id}/move-down',
+                    headers={'X-Requested-With': 'XMLHttpRequest'})
+
+        # Move B up once
+        client.post(f'/admin/units/{b_id}/move-up',
+                    headers={'X-Requested-With': 'XMLHttpRequest'})
+
+        with app.app_context():
+            orders = [
+                db.session.get(TeachingUnit, uid).sort_order
+                for uid in (a_id, b_id, c_id)
+            ]
+            # All sort_order values must be unique
+            assert len(set(orders)) == 3, f'Duplicate sort_order: {orders}'
+
+    def test_swap_three_units_alternating(self, app, client, teaching_class_id,
+                                           teacher_id):
+        """A down → B down (B now first) → verify each step"""
+        a_id, b_id, c_id = _create_three_units(app, teaching_class_id)
+        login_as_teacher(client)
+
+        # A down: A↔B → B(1),A(2),C(3)
+        r1 = client.post(f'/admin/units/{a_id}/move-down',
+                         headers={'X-Requested-With': 'XMLHttpRequest'})
+        assert r1.status_code == 200
+        d1 = json.loads(r1.data)
+        assert d1['ok'] is True
+        assert d1['swapped_with'] == b_id
+
+        # B down: B(1)↔A(2) → A(1),B(2),C(3) — back to original
+        r2 = client.post(f'/admin/units/{b_id}/move-down',
+                         headers={'X-Requested-With': 'XMLHttpRequest'})
+        assert r2.status_code == 200
+        d2 = json.loads(r2.data)
+        assert d2['ok'] is True
+        assert d2['swapped_with'] == a_id
+
+        with app.app_context():
+            orders = {
+                'A': db.session.get(TeachingUnit, a_id).sort_order,
+                'B': db.session.get(TeachingUnit, b_id).sort_order,
+                'C': db.session.get(TeachingUnit, c_id).sort_order,
+            }
+            # Back to original: A(1),B(2),C(3)
+            assert orders['A'] == 1
+            assert orders['B'] == 2
+            assert orders['C'] == 3, (
+                f'Expected A(1),B(2),C(3) but got {orders}'
             )
