@@ -77,17 +77,46 @@
 </div>
 {% endif %}
 
-<h4 class="mt-4 mb-3">教学单元</h4>
+<div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+    <h4 class="mb-0">教学单元</h4>
+    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#unitModal" onclick="resetUnitForm()">
+        <i class="bi bi-plus-lg me-1"></i>新增单元
+    </button>
+</div>
 {% for unit in units %}
 <div class="card mb-3 border-0 shadow-sm">
     <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span class="fw-bold">{{ unit.title }}</span>
-        <span>
-            {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
-            {% if unit.get_post_assessment() %}<span class="badge bg-success">有后测</span>{% endif %}
-        </span>
+        <div class="d-flex align-items-center gap-1">
+            <span class="me-2">
+                {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
+                {% if unit.get_post_assessment() %}<span class="badge bg-success">有后测</span>{% endif %}
+            </span>
+            <form method="POST" action="{{ url_for('admin.move_unit_up', unit_id=unit.id) }}" class="d-inline">
+                <button class="btn btn-outline-secondary btn-sm py-0 px-1" title="上移"><i class="bi bi-arrow-up"></i></button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.move_unit_down', unit_id=unit.id) }}" class="d-inline">
+                <button class="btn btn-outline-secondary btn-sm py-0 px-1" title="下移"><i class="bi bi-arrow-down"></i></button>
+            </form>
+            <button class="btn btn-outline-warning btn-sm py-0 px-1" title="编辑"
+                    data-bs-toggle="modal" data-bs-target="#unitModal"
+                    data-unit-id="{{ unit.id }}"
+                    data-title="{{ unit.title }}"
+                    data-sort-order="{{ unit.sort_order }}"
+                    data-description="{{ unit.description or '' }}"
+                    data-action="{{ url_for('admin.edit_unit', unit_id=unit.id) }}">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <form method="POST" action="{{ url_for('admin.delete_unit', unit_id=unit.id) }}" class="d-inline"
+                  onsubmit="return confirm('确定删除单元「{{ unit.title }}」？将同时删除关联的测评、提交记录和学习目标。')">
+                <button class="btn btn-outline-danger btn-sm py-0 px-1" title="删除"><i class="bi bi-trash"></i></button>
+            </form>
+        </div>
     </div>
     <div class="card-body">
+        {% if unit.description %}
+        <p class="small text-muted mb-2">{{ unit.description }}</p>
+        {% endif %}
         <p class="small text-muted mb-2">{{ unit.objectives|length }} 个学习目标</p>
         <ul class="small mb-0">
             {% for obj in unit.objectives %}
@@ -97,4 +126,66 @@
     </div>
 </div>
 {% endfor %}
+
+<!-- Unit Create/Edit Modal -->
+<div class="modal fade" id="unitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="unitForm" method="POST" action="{{ url_for('admin.create_unit', class_id=teaching_class.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="unitModalTitle">新增教学单元</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">单元标题</label>
+                        <input type="text" class="form-control" name="title" id="unitTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">排序号 <small class="text-muted">（留空自动排在最后）</small></label>
+                        <input type="number" class="form-control" name="sort_order" id="unitSortOrder" min="0" value="">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">单元描述 <small class="text-muted">（可选）</small></label>
+                        <textarea class="form-control" name="description" id="unitDescription" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function resetUnitForm() {
+    document.getElementById('unitForm').action = '{{ url_for("admin.create_unit", class_id=teaching_class.id) }}';
+    document.getElementById('unitModalTitle').textContent = '新增教学单元';
+    document.getElementById('unitTitle').value = '';
+    document.getElementById('unitSortOrder').value = '';
+    document.getElementById('unitDescription').value = '';
+}
+document.addEventListener('DOMContentLoaded', function () {
+    var unitModal = document.getElementById('unitModal');
+    unitModal.addEventListener('show.bs.modal', function (event) {
+        var btn = event.relatedTarget;
+        if (!btn) return;
+        var unitId = btn.getAttribute('data-unit-id');
+        if (!unitId) return; // creating new unit, reset handled by resetUnitForm
+        var title = btn.getAttribute('data-title');
+        var sortOrder = btn.getAttribute('data-sort-order');
+        var desc = btn.getAttribute('data-description');
+        var action = btn.getAttribute('data-action');
+        document.getElementById('unitForm').action = action;
+        document.getElementById('unitModalTitle').textContent = '编辑教学单元';
+        document.getElementById('unitTitle').value = title;
+        document.getElementById('unitSortOrder').value = sortOrder;
+        document.getElementById('unitDescription').value = desc;
+    });
+});
+</script>
 {% endblock %}

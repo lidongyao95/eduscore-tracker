@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from functools import wraps
 from ..models import db, User, Question, Assessment, Submission, TeachingClass, TeachingUnit, ClassEnrollment, LearningObjective
-from ..forms import QuestionForm, AssessmentForm, StudentCreateForm
+from ..forms import QuestionForm, AssessmentForm, StudentCreateForm, TeachingUnitForm
 from ..services.gain import class_gain_summary
 from ..services.growth import build_student_growth_context
 from ..extensions import cache
@@ -71,6 +71,125 @@ def class_detail(class_id):
     units = tc.units
     return render_template('admin/class_detail.html',
                           teaching_class=tc, units=units, summary=summary)
+
+
+# ── Teaching Unit CRUD ──────────────────────────────────────────────────
+
+@admin_bp.route('/classes/<int:class_id>/units/new', methods=['POST'])
+@teacher_required
+def create_unit(class_id):
+    tc = TeachingClass.query.get_or_404(class_id)
+    if tc.teacher_id != current_user.id:
+        abort(403)
+    form = TeachingUnitForm()
+    if form.validate_on_submit():
+        # auto-assign sort_order to end if not specified
+        order = form.sort_order.data
+        if not order:
+            max_order = db.session.query(db.func.max(TeachingUnit.sort_order))\
+                .filter_by(class_id=class_id).scalar() or 0
+            order = max_order + 1
+        unit = TeachingUnit(
+            class_id=class_id,
+            title=form.title.data,
+            sort_order=order,
+            description=form.description.data,
+        )
+        db.session.add(unit)
+        db.session.commit()
+        cache.delete_memoized(class_gain_summary)
+        flash('教学单元已添加', 'success')
+    else:
+        for field, errors in form.errors.items():
+            for err in errors:
+                flash(f'{field}: {err}', 'danger')
+    return redirect(url_for('admin.class_detail', class_id=class_id))
+
+
+@admin_bp.route('/units/<int:unit_id>/edit', methods=['POST'])
+@teacher_required
+def edit_unit(unit_id):
+    unit = TeachingUnit.query.get_or_404(unit_id)
+    tc = unit.teaching_class
+    if tc.teacher_id != current_user.id:
+        abort(403)
+    form = TeachingUnitForm()
+    if form.validate_on_submit():
+        unit.title = form.title.data
+        unit.sort_order = form.sort_order.data or unit.sort_order
+        unit.description = form.description.data
+        db.session.commit()
+        cache.delete_memoized(class_gain_summary)
+        cache.delete_memoized(build_student_growth_context)
+        flash('教学单元已更新', 'success')
+    else:
+        for field, errors in form.errors.items():
+            for err in errors:
+                flash(f'{field}: {err}', 'danger')
+    return redirect(url_for('admin.class_detail', class_id=tc.id))
+
+
+@admin_bp.route('/units/<int:unit_id>/delete', methods=['POST'])
+@teacher_required
+def delete_unit(unit_id):
+    unit = TeachingUnit.query.get_or_404(unit_id)
+    tc = unit.teaching_class
+    if tc.teacher_id != current_user.id:
+        abort(403)
+    class_id = tc.id
+    # delete associated assessments and submissions first
+    for a in unit.assessments:
+        Submission.query.filter_by(assessment_id=a.id).delete()
+        db.session.delete(a)
+    # delete learning objectives (questions have nullable objective_id)
+    for obj in unit.objectives:
+        db.session.delete(obj)
+    db.session.delete(unit)
+    db.session.commit()
+    cache.delete_memoized(class_gain_summary)
+    cache.delete_memoized(build_student_growth_context)
+    flash('教学单元已删除', 'info')
+    return redirect(url_for('admin.class_detail', class_id=class_id))
+
+
+@admin_bp.route('/units/<int:unit_id>/move-up', methods=['POST'])
+@teacher_required
+def move_unit_up(unit_id):
+    unit = TeachingUnit.query.get_or_404(unit_id)
+    tc = unit.teaching_class
+    if tc.teacher_id != current_user.id:
+        abort(403)
+    # find the unit with the next lower sort_order
+    prev_unit = TeachingUnit.query.filter(
+        TeachingUnit.class_id == tc.id,
+        TeachingUnit.sort_order < unit.sort_order
+    ).order_by(TeachingUnit.sort_order.desc()).first()
+    if prev_unit:
+        unit.sort_order, prev_unit.sort_order = prev_unit.sort_order, unit.sort_order
+        db.session.commit()
+        cache.delete_memoized(class_gain_summary)
+        cache.delete_memoized(build_student_growth_context)
+    return redirect(url_for('admin.class_detail', class_id=tc.id))
+
+
+@admin_bp.route('/units/<int:unit_id>/move-down', methods=['POST'])
+@teacher_required
+def move_unit_down(unit_id):
+    unit = TeachingUnit.query.get_or_404(unit_id)
+    tc = unit.teaching_class
+    if tc.teacher_id != current_user.id:
+        abort(403)
+    # find the unit with the next higher sort_order
+    next_unit = TeachingUnit.query.filter(
+        TeachingUnit.class_id == tc.id,
+        TeachingUnit.sort_order > unit.sort_order
+    ).order_by(TeachingUnit.sort_order.asc()).first()
+    if next_unit:
+        unit.sort_order, next_unit.sort_order = next_unit.sort_order, unit.sort_order
+        db.session.commit()
+        cache.delete_memoized(class_gain_summary)
+        cache.delete_memoized(build_student_growth_context)
+    return redirect(url_for('admin.class_detail', class_id=tc.id))
 
 
 @admin_bp.route('/questions')
