@@ -24,12 +24,12 @@
 | 认证 | Flask-Login 0.6 | 会话管理简单，与 SQLAlchemy 无缝集成 |
 | 表单 | Flask-WTF 1.2 + WTForms 3.1 | 内建 CSRF 保护，无需额外配置 |
 | 缓存 | Flask-Caching (SimpleCache) | 内存 dict 缓存成长轨迹与班级增益，TTL 60s，写操作即时清除 |
-| 前端 CSS | Bootstrap 5.3（BootCDN）| 国内 CDN 直连（cdn.bootcdn.net），无需翻墙 |
-| 前端图表 | ECharts 5.5.0（BootCDN）| 中文文档完善、柱状图/折线图/分组切换原生支持、配置式 API 适合 Jinja2 模板 |
-| UI 图标 | Bootstrap Icons 1.11（BootCDN）| 免费、无需注册 |
+| 前端 CSS | Bootstrap 5.3（本地 static） | 本地 static 文件加载，无外部网络依赖 |
+| 前端图表 | ECharts 5（本地 static） | 中文文档完善、柱状图/折线图/分组切换原生支持、配置式 API 适合 Jinja2 模板 |
+| UI 图标 | Bootstrap Icons 1.11（本地 static）| 免费、无需注册，字体文件本地化 |
 | 密码哈希 | werkzeug.security | Flask 内置依赖，默认 scrypt 算法 |
 
-**国内部署友好：** 所有前端资源（CSS/JS/图标）从 BootCDN 加载，Python 包从清华镜像安装，全程无需翻墙。
+**国内部署友好：** 所有前端资源（CSS/JS/图标/字体）已本地化到 `static/` 目录，Python 包从清华镜像安装，全程无需翻墙。
 
 ---
 
@@ -42,7 +42,7 @@ eduscore-tracker/
 │   ├── app.py                 # Flask 工厂函数 (create_app)
 │   ├── config.py              # 配置 (SECRET_KEY, DATABASE_URL, CACHE_TYPE)
 │   ├── models.py              # 8 张表：User, TeachingClass, ClassEnrollment, TeachingUnit, LearningObjective, Question, Assessment, Submission
-│   ├── forms.py               # WTForms 表单：LoginForm, QuestionForm, AssessmentForm, StudentCreateForm, TeachingClassForm
+│   ├── forms.py               # WTForms 表单：LoginForm, RegisterForm, TeachingClassForm, TeachingUnitForm, LearningObjectiveForm, QuestionForm, AssessmentForm, StudentCreateForm, GradingForm
 │   ├── auth.py                # 认证蓝图 (login/login_required/register)
 │   ├── extensions.py          # db = SQLAlchemy(); cache = Cache()
 │   ├── services/              # 业务逻辑层
@@ -52,7 +52,13 @@ eduscore-tracker/
 │   └── views/                 # 路由蓝图
 │       ├── __init__.py
 │       ├── student.py         # 学生端路由 (dashboard/growth/take/result)
-│       └── admin.py           # 教师后台路由 (CRUD + 导出 + 批改)
+│       └── admin/             # 教师后台路由（按功能域拆分）
+│           ├── __init__.py    # 公共路由 + teacher_required 装饰器
+│           ├── classes.py     # 教学班 & 教学单元 CRUD + 排序
+│           ├── questions.py   # 题库管理
+│           ├── students.py    # 学生管理
+│           ├── assessments.py # 测评管理
+│           └── exports.py     # 数据导出
 ├── templates/
 │   ├── base.html              # Bootstrap 5 母版 + 导航栏
 │   ├── login.html             # 居中登录卡片
@@ -69,7 +75,13 @@ eduscore-tracker/
 │   └── shared/                # 2 个跨角色共享模板
 │       ├── _growth_chart.html    # ECharts 图表 JS（include 引入）
 │       └── student_detail.html   # 学生详情 + 成长轨迹（教师 & 学生共用）
-├── static/style.css
+├── static/
+│   ├── style.css              # 自定义样式
+│   ├── bootstrap.min.css      # Bootstrap 5.3 CSS（本地化）
+│   ├── bootstrap.bundle.min.js # Bootstrap 5.3 JS Bundle（本地化）
+│   ├── bootstrap-icons.css    # Bootstrap Icons 1.11 CSS（本地化）
+│   ├── echarts.min.js         # ECharts 5（本地化）
+│   └── fonts/                 # Bootstrap Icons 字体文件
 ├── scripts/
 │   ├── init_db.py             # 正式模式初始化
 │   ├── seed_data.py           # 最小种子数据
@@ -297,6 +309,11 @@ CREATE TABLE submissions (
 | GET | `/admin/dashboard` | 是 | teacher | 后台首页 | `admin/dashboard.html` |
 | GET | `/admin/classes` | 是 | teacher | 教学班列表 | `admin/classes.html` |
 | GET | `/admin/classes/<id>` | 是 | teacher | 班级详情 + 增益汇总 | `admin/class_detail.html` |
+| POST | `/admin/classes/<id>/units/new` | 是 | teacher | 新增教学单元 | 重定向 |
+| POST | `/admin/units/<id>/edit` | 是 | teacher | 编辑教学单元 | 重定向 |
+| POST | `/admin/units/<id>/delete` | 是 | teacher | 删除教学单元 | 重定向 |
+| POST | `/admin/units/<id>/move-up` | 是 | teacher | 单元上移（AJAX） | JSON |
+| POST | `/admin/units/<id>/move-down` | 是 | teacher | 单元下移（AJAX） | JSON |
 | GET | `/admin/questions` | 是 | teacher | 题库列表 | `admin/questions.html` |
 | GET,POST | `/admin/questions/new` | 是 | teacher | 创建题目 | `admin/question_form.html` |
 | GET,POST | `/admin/questions/<id>/edit` | 是 | teacher | 编辑题目 | `admin/question_form.html` |
@@ -465,7 +482,7 @@ chart_payload 中每条记录有 group_type 字段：
 ## 8. 模板继承树
 
 ```
-base.html (Bootstrap 5 + ECharts CDN, 导航栏, flash消息)
+base.html (Bootstrap 5 + ECharts 本地 static, 导航栏, flash消息)
 ├── login.html
 ├── register.html
 ├── student/
@@ -534,14 +551,14 @@ bash run.sh demo     # 演示模式（重建数据库 + 演示数据）
 | 教师 | teacher | teacher123 |
 | 学生 | student1 | student123 |
 
-### 前端 CDN 来源（BootCDN，国内直连）
+### 前端静态资源（本地化，无外部依赖）
 
-| 资源 | CDN URL |
-|------|---------|
-| Bootstrap CSS | `https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css` |
-| Bootstrap JS | `https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js` |
-| Bootstrap Icons | `https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.css` |
-| ECharts | `https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js` |
+| 资源 | 本地路径 |
+|------|----------|
+| Bootstrap CSS | `static/bootstrap.min.css` |
+| Bootstrap JS | `static/bootstrap.bundle.min.js` |
+| Bootstrap Icons | `static/bootstrap-icons.css` + `static/fonts/` |
+| ECharts | `static/echarts.min.js` |
 
 ### Python 包镜像
 
@@ -565,9 +582,9 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 7. 创建 `app/app.py`（Flask 工厂函数，注册蓝图，`db.init_app(app)`, `cache.init_app(app)`, `db.create_all()`）
 
 ### 阶段二：认证系统
-8. 创建 `app/forms.py`（LoginForm, RegistrationForm, QuestionForm, AssessmentForm, StudentCreateForm, TeachingClassForm）
+8. 创建 `app/forms.py`（LoginForm, RegisterForm, TeachingClassForm, TeachingUnitForm, LearningObjectiveForm, QuestionForm, AssessmentForm, StudentCreateForm, GradingForm）
 9. 创建 `app/auth.py`（LoginManager, user_loader, login/logout/register 路由）
-10. 创建 `templates/base.html`（Bootstrap 5 母版 + CDN + 导航栏 + flash 消息）
+10. 创建 `templates/base.html`（Bootstrap 5 母版 + 本地 static 引用 + 导航栏 + flash 消息）
 11. 创建 `templates/login.html`（居中登录卡片）
 12. 创建 `templates/register.html`（注册表单）
 
@@ -579,7 +596,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 17. 创建 `templates/student/assessment_detail.html` + `test.html` + `result.html`
 
 ### 阶段四：教师后台
-18. 创建 `app/views/admin.py`（Blueprint, teacher_required 装饰器, 全部路由 + 缓存清除调用）
+18. 创建 `app/views/admin/` 子包（`__init__.py` 定义 Blueprint + teacher_required 装饰器，按功能域拆分 classes.py / questions.py / students.py / assessments.py / exports.py，各文件包含对应路由 + 缓存清除调用）
 19. 创建 `templates/admin/dashboard.html`
 20. 创建 `templates/admin/classes.html` + `class_detail.html`（教学班管理）
 21. 创建 `templates/admin/questions.html` + `question_form.html`（题库 CRUD）
@@ -592,7 +609,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 26. 创建 `templates/shared/student_detail.html`（学生详情 + 成长轨迹 + 提交记录，通过 back_url + current_user.role 区分教师/学生视图）
 27. 创建 `scripts/init_db.py` + `seed_data.py` + `demo_data.py` + `rebuild_db.py`
 28. 创建 `run.sh`（一键启动，支持 formal/demo 模式）
-29. 创建 `static/style.css`（自定义样式）
+29. 创建 `static/` 目录，下载 Bootstrap 5.3 CSS/JS、Bootstrap Icons CSS + 字体文件、ECharts 5 到本地；创建 `static/style.css`（自定义样式）
 
 ### 阶段六：测试
 30. 创建 `tests/conftest.py`（fixtures: app, client, db, teacher_id, student_id, teaching_class_id, unit_id, objective_id, question_id, assessment_id）

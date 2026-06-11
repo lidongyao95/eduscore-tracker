@@ -20,8 +20,8 @@
 |------|------|------|
 | 后端 | Python 3 + Flask | |
 | 数据库 | SQLite | 零配置，部署即用 |
-| 前端 | Bootstrap 5 | BootCDN 国内镜像，无需翻墙 |
-| 图表 | ECharts 5 | 中文文档完善，BootCDN 直连 |
+| 前端 | Bootstrap 5 | 本地 static 文件，无外部依赖 |
+| 图表 | ECharts 5 | 本地 static 文件 |
 | 认证 | Flask-Login | |
 | 表单 | Flask-WTF | 内建 CSRF 保护 |
 
@@ -74,9 +74,15 @@ eduscore-tracker/
 │   │   └── growth.py          # 成长曲线
 │   └── views/
 │       ├── student.py         # 学生端路由
-│       └── admin.py           # 教师后台路由
+│       └── admin/             # 教师后台路由（按功能域拆分）
+│           ├── __init__.py
+│           ├── classes.py     # 教学班 & 单元 CRUD
+│           ├── questions.py   # 题库管理
+│           ├── students.py    # 学生管理
+│           ├── assessments.py # 测评管理
+│           └── exports.py     # 数据导出
 ├── templates/                 # Jinja2 模板
-├── static/                    # CSS/JS
+├── static/                    # Bootstrap / ECharts / 图标（本地化）
 ├── docs/
 │   └── ARCHITECTURE.md        # AI 可复刻技术文档
 ├── run.sh                     # 一键启动脚本
