@@ -215,9 +215,11 @@ function handleSortClick(e) {
                         parent.insertBefore(card, ref);
                         parent.insertBefore(other, card.nextSibling);
                     }
-                    updateSortButtonVisibility();
                 }
             }
+            // Always refresh — ensures first/last button visibility stays correct
+            // even when swapped_with is null (unit at boundary).
+            updateSortButtonVisibility();
             btn.disabled = false;
         })
         .catch(function () { btn.disabled = false; });
