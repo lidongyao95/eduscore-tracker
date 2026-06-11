@@ -41,7 +41,7 @@ CLASS_CONFIG = {
 # Parallel pre/post questions per objective (different items, same learning goal)
 UNITS_CONFIG = [
     {
-        'title': '第1章 变量与数据类型',
+        'title': '变量与数据类型',
         'sort_order': 1,
         'has_pre': True,
         'objectives': [
@@ -93,7 +93,7 @@ UNITS_CONFIG = [
         ],
     },
     {
-        'title': '第2章 条件与循环',
+        'title': '条件与循环',
         'sort_order': 2,
         'has_pre': True,
         'objectives': [
@@ -145,7 +145,7 @@ UNITS_CONFIG = [
         ],
     },
     {
-        'title': '第3章 函数与模块',
+        'title': '函数与模块',
         'sort_order': 3,
         'has_pre': True,
         'objectives': [
@@ -197,7 +197,7 @@ UNITS_CONFIG = [
         ],
     },
     {
-        'title': '第4章 文件与异常',
+        'title': '文件与异常',
         'sort_order': 4,
         'has_pre': True,
         'objectives': [
@@ -234,7 +234,7 @@ UNITS_CONFIG = [
         ],
     },
     {
-        'title': '第5章 综合项目',
+        'title': '综合项目',
         'sort_order': 5,
         'has_pre': False,
         'objectives': [

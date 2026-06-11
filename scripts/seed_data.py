@@ -57,9 +57,9 @@ def seed():
             if not ClassEnrollment.query.filter_by(class_id=tc.id, student_id=s.id).first():
                 db.session.add(ClassEnrollment(class_id=tc.id, student_id=s.id))
 
-        unit = TeachingUnit.query.filter_by(class_id=tc.id, title='第1章 入门').first()
+        unit = TeachingUnit.query.filter_by(class_id=tc.id, title='入门').first()
         if unit is None:
-            unit = TeachingUnit(class_id=tc.id, title='第1章 入门', sort_order=1)
+            unit = TeachingUnit(class_id=tc.id, title='入门', sort_order=1)
             db.session.add(unit)
             db.session.flush()
             created.append('unit')

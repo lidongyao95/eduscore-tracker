@@ -89,21 +89,18 @@ def _make_chart_point(*, group_type, group_id, group_label, point_type,
 
 # ── unit chart-item helpers (used by student growth table) ────────────
 
-def _unit_chart_item(teaching_class, unit, report, chapter_number, num_classes=1):
-    base_label = f'{chapter_number}. {unit.title}'
-    group_label = f'[{teaching_class.name}] {base_label}' if num_classes > 1 else base_label
+def _unit_chart_item(teaching_class, unit, report, num_classes=1):
+    group_label = f'[{teaching_class.name}] {unit.title}' if num_classes > 1 else unit.title
     return {
         'group_type':    'unit',
         'group_id':      unit.id,
         'group_label':   group_label,
-        'group_order':   chapter_number,
+        'group_order':   unit.sort_order,
         'class_id':      teaching_class.id,
         'class_name':    teaching_class.name,
         'unit_id':       unit.id,
         'title':         unit.title,
-        'unit_title':    base_label,
-        'chapter_number': chapter_number,
-        'chapter_label': f'第{chapter_number}章',
+        'unit_title':    unit.title,
         'pre_rate':      report['pre_rate'],
         'post_rate':     report['post_rate'],
         'display_label': group_label,
@@ -179,16 +176,13 @@ def build_student_growth_context(student_id, class_ids=None):
 
     for tc in classes:
         units = list(tc.units)
-        for idx, unit in enumerate(units, start=1):
+        for unit in units:
             report = unit_gain_for_student_cached(unit, student_id, preloaded)
-            chapter_number = idx
             report['class_name'] = tc.name
-            report['chapter_number'] = chapter_number
-            report['chapter_label'] = f'第{chapter_number}章'
-            report['unit_title'] = f'{chapter_number}. {unit.title}'
+            report['unit_title'] = unit.title
             unit_reports.append(report)
 
-            item = _unit_chart_item(tc, unit, report, chapter_number,
+            item = _unit_chart_item(tc, unit, report,
                                     num_classes=len(classes))
             chart_items.append(item)
 

@@ -53,4 +53,4 @@ printf "  ║  学生提示: %-28s║\n" "${STUDENT_HINT}"
 echo "  ╚══════════════════════════════════════════╝"
 echo ""
 export PORT
-python -m app.app
+python -c "from app.app import main; main()"

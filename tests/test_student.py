@@ -134,6 +134,9 @@ class TestGrowthPage:
         login_as_student(client)
         resp = client.get('/student/growth')
         assert resp.status_code == 200
-        assert '第1章 测试单元'.encode('utf-8') in resp.data
+        # 前测/后测 badge 和提交记录应出现
         assert '前测'.encode('utf-8') in resp.data
         assert '后测'.encode('utf-8') in resp.data
+        # 测评标题应在页面中渲染（前测测评 / 后测测评）
+        assert '前测测评'.encode('utf-8') in resp.data
+        assert '后测测评'.encode('utf-8') in resp.data

@@ -78,7 +78,7 @@ def unit_id(app, teaching_class_id):
     from app.extensions import db
     with app.app_context():
         u = TeachingUnit(
-            class_id=teaching_class_id, title='第1章 测试单元',
+            class_id=teaching_class_id, title='测试单元',
             sort_order=1, description='测试单元',
         )
         db.session.add(u)

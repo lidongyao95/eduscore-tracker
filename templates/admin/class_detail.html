@@ -86,7 +86,7 @@
 {% for unit in units %}
 <div class="card mb-3 border-0 shadow-sm unit-card" data-unit-id="{{ unit.id }}">
     <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span class="fw-bold"><span class="chapter-num">{{ loop.index }}</span>. {{ unit.title }}</span>
+        <span class="fw-bold">{{ unit.title }}</span>
         <div class="d-flex align-items-center gap-1">
             <span class="me-2">
                 {% if unit.get_pre_assessment() %}<span class="badge bg-primary me-1">有前测</span>{% else %}<span class="badge bg-secondary me-1">无前测</span>{% endif %}
@@ -172,13 +172,6 @@ function resetUnitForm() {
     document.getElementById('unitDescription').value = '';
 }
 
-function updateChapterNumbers() {
-    document.querySelectorAll('.unit-card').forEach(function (card, i) {
-        var num = card.querySelector('.chapter-num');
-        if (num) num.textContent = i + 1;
-    });
-}
-
 function handleSortClick(e) {
     e.preventDefault();
     var btn = e.currentTarget;
@@ -204,7 +197,6 @@ function handleSortClick(e) {
                         parent.insertBefore(card, ref);
                         parent.insertBefore(other, card.nextSibling);
                     }
-                    updateChapterNumbers();
                 }
             }
             btn.disabled = false;
